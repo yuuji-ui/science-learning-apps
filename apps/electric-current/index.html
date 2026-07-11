@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>理科小テスト：電流マスター ロード・オブ・マスター版</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #2980b9;
+            --danger: #c0392b;
+            --success: #27ae60;
+            --warning: #e67e22;
+            --bg: #f5f7fa;
+            --panel: #ffffff;
+        }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg);
+            color: #333;
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        .pseudo-fullscreen {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 99999 !important;
+            background-color: var(--bg) !important;
+            box-sizing: border-box !important;
+            padding: 20px !important;
+            overflow-y: auto !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+        }
+        .container {
+            background: var(--panel);
+            border: 2px solid #bdc3c7;
+            border-radius: 12px;
+            padding: 20px;
+            width: 100%;
+            max-width: 685px;
+            box-sizing: border-box;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        h1, h2 { text-align: center; color: var(--primary); margin-top: 0; margin-bottom: 10px;}
+        .top-nav-bar {
+            width: 100%;
+            max-width: 685px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+        .btn-fs { background-color: #7f8c8d; color: white; border: none; padding: 8px 14px; font-size: 14px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-reset-top { background-color: #e2e8f0; color: #4a5568; border: 1px solid #cbd5e0; padding: 8px 14px; font-size: 14px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-reset-top:hover { background-color: #edf2f7; }
+        .setting-section { background: #edf2f7; padding: 15px; border-radius: 8px; margin: 15px 0; }
+        .setting-group { margin-bottom: 15px; }
+        .setting-group label { font-weight: bold; display: block; margin-bottom: 6px; color: var(--primary); }
+        .radio-box { display: flex; gap: 8px; margin-bottom: 5px; flex-wrap: wrap; }
+        .radio-box label { background: #fff; border: 2px solid #cbd5e0; padding: 10px; border-radius: 6px; cursor: pointer; flex: 1; min-width: 140px; text-align: center; font-size: 14px; transition: all 0.2s; }
+        .radio-box input[type="radio"] { display: none; }
+        .radio-box input[type="radio"]:checked + label { border-color: var(--accent); background: #ebf8ff; color: var(--accent); font-weight: bold; }
+        .grid-2x2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .grid-2x2 label { margin: 0; min-width: auto; }
+        .grid-2x2 input[type="radio"]#diff-oni:checked + label { border-color: var(--danger); background: #fff5f5; color: var(--danger); }
+        .grid-2x2 input[type="radio"]#diff-superoni:checked + label { border-color: #6b21a8; background: #faf5ff; color: #6b21a8; }
+        .ranking-panel { background:#fff; border:1px solid #cbd5e0; border-radius:8px; padding:12px; margin-top:12px; }
+        .ranking-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+        .ranking-card { border:1px solid #e2e8f0; border-radius:7px; padding:9px; background:#f8fafc; }
+        .ranking-card h4 { margin:0 0 6px; color:var(--primary); }
+        .ranking-card ol { margin:0; padding-left:24px; font-size:13px; line-height:1.7; }
+        .name-input { width:100%; box-sizing:border-box; font-size:17px; padding:9px 10px; border:2px solid #cbd5e0; border-radius:6px; }
+        @media (max-width:560px) { .ranking-grid { grid-template-columns:1fr; } }
+        .sub-time-box { background: #ffffff; border: 1px dashed #cbd5e0; padding: 10px; border-radius: 6px; margin-top: 8px; display: flex; gap: 10px; justify-content: center; }
+        .sub-time-box label { padding: 6px 12px; font-size: 13px; }
+        .btn { background-color: var(--accent); color: white; border: none; padding: 14px 20px; font-size: 18px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn:hover { opacity: 0.9; }
+        .btn-main { width: 100%; padding: 16px; font-size: 20px; }
+        .btn-action-group { display: flex; gap: 15px; margin-top: 15px; width: 100%; }
+        .btn-submit { flex: 2; background-color: var(--success); font-size: 20px; }
+        .btn-pass { flex: 1; background-color: var(--warning); font-size: 15px; }
+        .hidden { display: none !important; }
+        .status-bar { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px 12px; font-size: 16px; font-weight: bold; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #eee; }
+        .status-bar .mistakes { color: var(--warning); }
+        .timer { color: var(--danger); }
+        .circuit-view { background: #fff; border: 1px solid #ddd; border-radius: 6px; display: flex; justify-content: center; padding: 15px; margin-bottom: 15px; }
+        .input-view { position: relative; display: flex; flex-direction: column; align-items: center; margin: 15px 0; gap: 10px; width: 100%; min-height: 150px; }
+        .input-row { display: flex; align-items: center; gap: 5px; }
+        .ans-input { font-size: 32px; width: 150px; text-align: center; padding: 6px; border: 3px solid var(--accent); border-radius: 8px; background-color: #fff; color: #000; }
+        .keypad { position: absolute; right: 0; top: -5px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; width: 150px; margin-top: 0; }
+        .key { background: #f8fafc; border: 2px solid #cbd5e0; font-size: 18px; font-weight: bold; padding: 8px 0; border-radius: 8px; cursor: pointer; text-align: center; user-select: none; }
+        .key-wide { grid-column: span 2; }
+        @media (max-width: 620px) {
+            .input-view { min-height: auto; }
+            .keypad { position: static; width: 100%; max-width: 220px; gap: 8px; }
+            .key { font-size: 22px; padding: 12px 0; }
+        }
+        .key:active { background: #cbd5e0; }
+        .key-clear { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+        .q-text { font-size: 19px; font-weight: bold; background: #fff8db; padding: 12px; border-radius: 6px; border-left: 5px solid #f1c40f; margin-bottom: 10px; text-align: center; white-space: pre-line; }
+        .feedback-area { text-align: center; min-height: 24px; font-weight: bold; font-size: 16px; margin-bottom: 10px; }
+        .feedback-wrong { color: var(--danger); animation: shake 0.3s; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+        .score-display { font-size: 28px; text-align: center; color: var(--success); font-weight: bold; margin: 15px 0; }
+        .time-display { font-size: 18px; text-align: center; margin-bottom: 20px; font-weight: bold; color: var(--primary); }
+        .review-item { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; background: #fff; border-radius: 6px; }
+        .badge { display: inline-block; padding: 3px 8px; font-size: 12px; border-radius: 4px; color: white; margin-left: 10px; }
+        .badge-pass { background-color: var(--warning); }
+        .badge-miss { background-color: var(--danger); }
+        .badge-retry { background-color: #8e44ad; }
+        .badge-timeout { background-color: #7f8c8d; }
+        .review-explanation { background: #f9f9f9; padding: 10px; border-radius: 4px; margin-top: 10px; font-size: 14px; color: #555; line-height: 1.5; white-space: pre-line; }
+    </style>
+</head>
+<body>
+
+<div class="top-nav-bar">
+    <button id="fullscreen-btn" class="btn-fs" onclick="toggleFullscreen()">全画面にする ⛶</button>
+    <button id="reset-top-btn" class="btn-reset-top" onclick="confirmBackToSetup()">最初からやり直す ↩</button>
+</div>
+
+<div class="container" id="quiz-container">
+    <div id="screen-setup">
+        <h1>🔌 理科小テスト：電流マスター 改良版 ⚡</h1>
+        <div class="setting-section">
+            <div class="setting-group">
+                <label>【1】テストモードをえらぶ</label>
+                <div class="radio-box">
+                    <input type="radio" id="mode-res" name="test-mode" value="resistance" checked>
+                    <label for="mode-res">🧩 合成抵抗アタック</label>
+                    <input type="radio" id="mode-tri" name="test-mode" value="triathlon">
+                    <label for="mode-tri">🏃‍♂️ オームの法則 トライアスロン</label>
+                    <input type="radio" id="mode-rand" name="test-mode" value="random">
+                    <label for="mode-rand">🎲 ランダムチャレンジ</label>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <label>【2】難易度をえらぶ</label>
+                <div class="radio-box grid-2x2">
+                    <input type="radio" id="diff-easy" name="diff-level" value="easy" checked onclick="toggleOniSettings(false)">
+                    <label for="diff-easy">🟢 初級（5問）<br><small>抵抗の数：1〜2個<br>パスの数：0回</small></label>
+                    <input type="radio" id="diff-normal" name="diff-level" value="normal" onclick="toggleOniSettings(false)">
+                    <label for="diff-normal">🟡 中級（10問）<br><small>抵抗の数：2〜3個<br>パスの数：3回</small></label>
+                    <input type="radio" id="diff-hard" name="diff-level" value="hard" onclick="toggleOniSettings(false)">
+                    <label for="diff-hard">🔴 上級（15問）<br><small>抵抗の数：2〜4個<br>パスの数：1回</small></label>
+                    <input type="radio" id="diff-oni" name="diff-level" value="oni" onclick="toggleOniSettings(true)">
+                    <label for="diff-oni" style="color:#c0392b; font-weight: bold;">😈 鬼（30問）<br><small>抵抗の数：3〜4個<br>パスなし・1ミスで終了</small></label>
+                    <input type="radio" id="diff-superoni" name="diff-level" value="superoni" onclick="toggleOniSettings(true)">
+                    <label for="diff-superoni" style="color:#6b21a8; font-weight:bold;">👹 ロード・オブ・マスター（エンドレス）<br><small>鬼と同じ問題レベル<br>タイムアタック／時間内正解数</small></label>
+                </div>
+            </div>
+
+            <div class="setting-group" id="time-rule-group">
+                <label>【3】時間ルールをえらぶ</label>
+                <div class="radio-box">
+                    <input type="radio" id="time-ta" name="time-rule-type" value="ta" checked onclick="toggleTimeDetail(false)">
+                    <label for="time-ta">⏱️ タイムアタック<br><small>(制限時間なし)</small></label>
+                    <input type="radio" id="time-cd" name="time-rule-type" value="cd" onclick="toggleTimeDetail(true)">
+                    <label for="time-cd">⏳ カウントダウン<br><small>(制限時間あり)</small></label>
+                </div>
+                <div id="countdown-options" class="sub-time-box hidden">
+                    <input type="radio" id="cd-1m" name="countdown-val" value="60">
+                    <label for="cd-1m">1分</label>
+                    <input type="radio" id="cd-3m" name="countdown-val" value="180">
+                    <label for="cd-3m">3分</label>
+                    <input type="radio" id="cd-5m" name="countdown-val" value="300" checked>
+                    <label for="cd-5m">5分</label>
+                    <input type="radio" id="cd-7m" name="countdown-val" value="420">
+                    <label for="cd-7m">7分</label>
+                    <input type="radio" id="cd-10m" name="countdown-val" value="600">
+                    <label for="cd-10m">10分</label>
+                </div>
+            </div>
+            <div class="setting-group">
+                <label>【4】弱点克服メニュー（出題を少し偏らせる）</label>
+                <div class="radio-box">
+                    <input type="radio" id="focus-balanced" name="focus-type" value="balanced" checked>
+                    <label for="focus-balanced">バランスよく</label>
+                    <input type="radio" id="focus-parallel" name="focus-type" value="parallel">
+                    <label for="focus-parallel">並列を多め</label>
+                    <input type="radio" id="focus-mixed" name="focus-type" value="mixed">
+                    <label for="focus-mixed">混合回路を多め</label>
+                    <input type="radio" id="focus-ohm" name="focus-type" value="ohm">
+                    <label for="focus-ohm">オームの法則多め</label>
+                    <input type="radio" id="focus-resistance" name="focus-type" value="resistance">
+                    <label for="focus-resistance">合成抵抗多め</label>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <label>【5】名前（タイムアタックランキング用）</label>
+                <input id="player-name" class="name-input" type="text" maxlength="12" placeholder="例：2年1組 田中" autocomplete="off">
+                <small style="display:block;margin-top:5px;color:#64748b;">タイムアタックを選んだ場合だけ使用します。記録はこの端末内に保存されます。</small>
+            </div>
+            <div class="ranking-panel">
+                <h3 style="margin:0 0 8px;color:var(--primary);">🏆 タイムアタックランキング（上位3人）</h3>
+                <div id="ranking-grid" class="ranking-grid"></div>
+                <button type="button" class="btn-reset-top" style="margin-top:10px;" onclick="clearRankings()">ランキングを消去</button>
+            </div>
+
+        </div>
+        <button class="btn btn-main" onclick="startQuiz()">小テストをはじめる ➔</button>
+    </div>
+
+    <div id="screen-test" class="hidden">
+        <div class="status-bar">
+            <div>進行: <span id="info-progress">1/10</span> 問</div>
+            <div class="mistakes">まちがい: <span id="info-mistakes">0</span> 回</div>
+            <div class="timer" id="timer-box"><span id="timer-label">すすんだ時間</span>: <span id="info-timer">00:00</span></div>
+        </div>
+        <div class="circuit-view" id="circuit-area"></div>
+        <p class="q-text" id="question-text">指示された値を求めなさい。</p>
+        <div class="feedback-area" id="feedback-msg"></div>
+        <div class="input-view">
+            <div class="input-row">
+                <input type="number" step="0.1" inputmode="decimal" id="student-ans" class="ans-input" placeholder="?" onkeydown="if(event.key==='Enter')submitAnswer()">
+                <span style="font-size: 32px; font-weight: bold;" id="unit-display"> Ω</span>
+            </div>
+            <div class="keypad">
+                <div class="key" onclick="pressKey('1')">1</div>
+                <div class="key" onclick="pressKey('2')">2</div>
+                <div class="key" onclick="pressKey('3')">3</div>
+                <div class="key" onclick="pressKey('4')">4</div>
+                <div class="key" onclick="pressKey('5')">5</div>
+                <div class="key" onclick="pressKey('6')">6</div>
+                <div class="key" onclick="pressKey('7')">7</div>
+                <div class="key" onclick="pressKey('8')">8</div>
+                <div class="key" onclick="pressKey('9')">9</div>
+                <div class="key key-clear" onclick="pressKey('clear')">けす</div>
+                <div class="key" onclick="pressKey('0')">0</div>
+                <div class="key" onclick="pressKey('.')">.</div>
+                <div class="key key-wide" onclick="pressKey('back')">⌫</div>
+            </div>
+        </div>
+        <div class="btn-action-group">
+            <button class="btn btn-pass" id="pass-btn" onclick="passQuestion()">わからないから飛ばす ↩</button>
+            <button class="btn btn-submit" onclick="submitAnswer()">こたえあわせ (Enter) ➔</button>
+        </div>
+    </div>
+
+    <div id="screen-result" class="hidden">
+        <h2 id="res-title">📊 テスト結果</h2>
+        <div class="score-display" id="res-score">目標クリア！</div>
+        <div class="time-display" id="res-time">タイム: --:--</div>
+        <div id="rank-result" class="ranking-panel hidden"></div>
+        <div id="review-section" class="hidden">
+            <h3 style="border-left: 5px solid var(--danger); padding-left:10px; margin-top:25px; color: var(--danger);">⚠️ 見直しておきたい問題の解説</h3>
+            <p style="font-size:13px; color:#666; margin-top:-5px;">（まちがえた問題／パスした問題／時間切れの問題／やり直して正解した問題）</p>
+            <div id="review-list"></div>
+        </div>
+        <button class="btn btn-main hidden" id="retry-missed-btn" style="background-color: var(--warning);">まちがえた問題だけもう一度解く 🔄</button>
+        <button class="btn btn-main" style="background-color: var(--primary); margin-top:10px;" onclick="backToSetup()">もういちど最初から遊ぶ</button>
+    </div>
+</div>
+
+<script>
+// 並列計算が綺麗に整数になる厳選されたペア(R1, R2, 合成抵抗値)
+const PERFECT_PARALLELS = [
+    {r1:6, r2:3, a:2}, {r1:12, r2:4, a:3}, {r1:10, r2:10, a:5}, {r1:20, r2:5, a:4},
+    {r1:30, r2:15, a:10}, {r1:12, r2:6, a:4}, {r1:20, r2:20, a:10}, {r1:15, r2:10, a:6},
+    {r1:8, r2:8, a:4}, {r1:24, r2:8, a:6}
+];
+
+// 上級・鬼用：小数第1位までで割り切れる並列ペア
+const DECIMAL_PARALLELS = [
+    {r1:2, r2:3, a:1.2}, {r1:3, r2:15, a:2.5}, {r1:4, r2:6, a:2.4},
+    {r1:5, r2:5, a:2.5}, {r1:6, r2:9, a:3.6}, {r1:6, r2:18, a:4.5},
+    {r1:8, r2:12, a:4.8}, {r1:10, r2:15, a:6.0}, {r1:12, r2:18, a:7.2}
+];
+
+function fmt(n) {
+    return Number.isInteger(n) ? String(n) : n.toFixed(1);
+}
+
+let questions = [];
+let currentIdx = 0;
+let studentAnswers = []; 
+let timerSeconds = 0;
+let timerId = null;
+let selectedMode = "";
+let selectedDiff = "";
+let selectedFocus = "balanced";
+let playerName = "";
+let timeType = "ta";
+let isEndless = false;
+let countdownStartSeconds = 0;
+let currentCorrectCount = 0;  
+let maxPassCount = 0;
+let usedPassCount = 0;
+let initialTotalQuestions = 5;
+let isFullscreenMode = false;
+let mistakeCounts = {};   // 問題ごとの間違えた回数（タイムアタックのやり直し分も記録）
+let shownFlags = {};      // その問題を実際に画面に表示したかどうか（時間切れ未回答の判定に使用）
+let totalMistakes = 0;    // 累計ミス回数（ステータスバー表示用）
+
+function toggleFullscreen() {
+    const container = document.getElementById('quiz-container');
+    const btn = document.getElementById('fullscreen-btn');
+    isFullscreenMode = !isFullscreenMode;
+    if (isFullscreenMode) {
+        container.classList.add('pseudo-fullscreen');
+        btn.innerText = 'もとの大きさに戻す ✖';
+        btn.style.backgroundColor = 'var(--danger)';
+    } else {
+        container.classList.remove('pseudo-fullscreen');
+        btn.innerText = '全画面にする ⛶';
+        btn.style.backgroundColor = '#7f8c8d';
+    }
+}
+
+function confirmBackToSetup() {
+    if (!document.getElementById('screen-test').classList.contains('hidden')) {
+        if (confirm("途中のデータが消えますが、設定画面にもどりますか？")) { backToSetup(); }
+    } else { backToSetup(); }
+}
+
+function toggleOniSettings(isOni) {
+    // 鬼モードでもカウントダウンを選べるようにする。
+    document.getElementById('time-rule-group').style.opacity = "1";
+    document.getElementById('time-rule-group').style.pointerEvents = "auto";
+    if (isOni) {
+        document.getElementById('time-cd').checked = true;
+        document.getElementById('cd-7m').checked = true; // 鬼30問・ロード・オブ・マスターの標準：7分
+        toggleTimeDetail(true);
+    }
+}
+
+function toggleTimeDetail(show) {
+    let box = document.getElementById('countdown-options');
+    if (show) { box.classList.remove('hidden'); } else { box.classList.add('hidden'); }
+}
+
+function pressKey(num) {
+    let inputEl = document.getElementById('student-ans');
+    if (num === 'clear') { inputEl.value = ''; }
+    else if (num === 'back') { inputEl.value = inputEl.value.slice(0, -1); }
+    else {
+        if (num === '.' && inputEl.value.includes('.')) return;
+        inputEl.value += num;
+    }
+    inputEl.focus();
+}
+
+function startQuiz() {
+    selectedMode = document.querySelector('input[name="test-mode"]:checked').value;
+    selectedDiff = document.querySelector('input[name="diff-level"]:checked').value;
+    selectedFocus = document.querySelector('input[name="focus-type"]:checked').value;
+    timeType = document.querySelector('input[name="time-rule-type"]:checked').value;
+    playerName = document.getElementById('player-name').value.trim();
+    if (timeType === 'ta' && !playerName) {
+        alert('タイムアタックランキング用の名前を入力してください。');
+        document.getElementById('player-name').focus();
+        return;
+    }
+
+    isEndless = selectedDiff === 'superoni';
+    if (selectedDiff === 'easy') { initialTotalQuestions = 5; maxPassCount = 0; }
+    else if (selectedDiff === 'normal') { initialTotalQuestions = 10; maxPassCount = 3; }
+    else if (selectedDiff === 'hard') { initialTotalQuestions = 15; maxPassCount = 1; }
+    else if (selectedDiff === 'oni') { initialTotalQuestions = 30; maxPassCount = 0; }
+    else if (selectedDiff === 'superoni') { initialTotalQuestions = Infinity; maxPassCount = 0; }
+
+    usedPassCount = 0; currentCorrectCount = 0; currentIdx = 0;
+    studentAnswers = []; questions = [];
+    mistakeCounts = {}; shownFlags = {}; totalMistakes = 0;
+    document.getElementById('info-mistakes').innerText = '0';
+
+    const firstBatch = isEndless ? 1 : initialTotalQuestions;
+    for (let i = 0; i < firstBatch; i++) {
+        questions.push(generateQuestionData(selectedMode, selectedDiff, i));
+    }
+
+    updatePassButtonText();
+
+    if (timeType === 'ta') {
+        timerSeconds = 0;
+        document.getElementById('timer-label').innerText = "すすんだ時間";
+    } else {
+        let cdVal = document.querySelector('input[name="countdown-val"]:checked').value;
+        timerSeconds = parseInt(cdVal);
+        countdownStartSeconds = timerSeconds;
+        document.getElementById('timer-label').innerText = "のこり時間";
+    }
+
+    document.getElementById('screen-setup').classList.add('hidden');
+    document.getElementById('screen-result').classList.add('hidden');
+    document.getElementById('screen-test').classList.remove('hidden');
+    
+    updateTimerDisplay();
+    clearInterval(timerId);
+    timerId = setInterval(handleTimer, 1000);
+    showQuestion();
+}
+
+function updatePassButtonText() {
+    let passBtn = document.getElementById('pass-btn');
+    if (selectedDiff === 'oni' || selectedDiff === 'superoni' || maxPassCount === 0) {
+        passBtn.innerText = "パス不可 ✖";
+        passBtn.style.opacity = "0.4";
+        passBtn.disabled = true;
+    } else {
+        passBtn.innerText = `パスする (のこり ${maxPassCount - usedPassCount}回)`;
+        passBtn.style.opacity = "1";
+        passBtn.disabled = false;
+    }
+}
+
+// 刷新された完璧な一元管理問題生成エンジン（AI）
+function pickParallel(diff) {
+    // 上級・鬼では約35%だけ小数第1位の並列を混ぜる。
+    const useDecimal = (diff === 'hard' || diff === 'oni' || diff === 'superoni') && Math.random() < 0.35;
+    const list = useDecimal ? DECIMAL_PARALLELS : PERFECT_PARALLELS;
+    return list[Math.floor(Math.random() * list.length)];
+}
+
+// 刷新された一元管理問題生成エンジン
+function generateQuestionData(mode, diff, idx) {
+    // 1. 難易度・弱点克服メニュー・問題番号に応じて回路の形状(type)を決定
+    let type = 's1';
+    if (selectedFocus === 'parallel') {
+        type = (Math.random() < 0.7) ? 'p2' : 'm3a';
+    } else if (selectedFocus === 'mixed') {
+        type = (Math.random() < 0.55) ? 'm3a' : 'm4a';
+    } else if (diff === 'easy') {
+        let rand = Math.random();
+        type = (rand < 0.3) ? 's1' : ((rand < 0.65) ? 's2' : 'p2');
+    } else if (diff === 'normal') {
+        type = (idx >= 6) ? 'm3a' : ((Math.random() > 0.5) ? 's2' : 'p2');
+    } else if (diff === 'hard') {
+        let rand = Math.random();
+        type = (idx >= 10) ? 'm4a' : ((idx >= 5) ? 'm3a' : ((rand > 0.5) ? 's2' : 'p2'));
+    } else if (diff === 'oni' || diff === 'superoni') {
+        type = (Math.random() > 0.5) ? 'm3a' : 'm4a';
+    }
+
+    // 2. 抵抗値(r1~r4)と全体の合成抵抗(Rt)
+    let r = [];
+    let Rt = 0;
+    let expRes = "";
+
+    if (type === 's1') {
+        let r1 = [2, 3, 4, 5, 6, 8, 10, 12, 15, 20][Math.floor(Math.random() * 10)];
+        r = [r1]; Rt = r1;
+        expRes = `この回路は抵抗が1つだけなので、全体の抵抗はそのまま ${fmt(Rt)} Ω となります。`;
+    } else if (type === 's2') {
+        let r1 = Math.floor(Math.random() * 12) + 2;
+        let r2 = Math.floor(Math.random() * 12) + 2;
+        r = [r1, r2]; Rt = r1 + r2;
+        expRes = `直列回路の全体の抵抗は、各抵抗の和になります。\n【計算】 ${r1} + ${r2} = ${fmt(Rt)} Ω`;
+    } else if (type === 'p2') {
+        let p = pickParallel(diff);
+        r = [p.r1, p.r2]; Rt = p.a;
+        expRes = `並列回路の全体の抵抗は、「和分の積（足した数 分の かけた数）」で求められます。\n【計算】 (${p.r1} × ${p.r2}) ÷ (${p.r1} + ${p.r2}) = ${p.r1*p.r2} ÷ ${p.r1+p.r2} = ${fmt(Rt)} Ω`;
+    } else if (type === 'm3a') {
+        let p = pickParallel(diff);
+        let r1 = Math.floor(Math.random() * 10) + 2;
+        r = [r1, p.r1, p.r2]; Rt = Math.round((r1 + p.a) * 10) / 10;
+        expRes = `まず並列部分（${p.r1} Ω と ${p.r2} Ω）の合成抵抗を求めると ${fmt(p.a)} Ω になります。\nこれが手前の ${r1} Ω の抵抗と直列につながっているため、これらを足し合わせます。\n【計算】 ${r1} + ${fmt(p.a)} = ${fmt(Rt)} Ω`;
+    } else if (type === 'm4a') {
+        let p1 = pickParallel(diff);
+        let p2 = pickParallel(diff);
+        if (p1.r1 === p2.r1 && p1.r2 === p2.r2) p2 = PERFECT_PARALLELS[Math.floor(Math.random() * PERFECT_PARALLELS.length)];
+        r = [p1.r1, p1.r2, p2.r1, p2.r2];
+        Rt = Math.round((p1.a + p2.a) * 10) / 10;
+        expRes = `複雑な混合回路ですが、2つの並列ブロックに分けて考えます。\n・左側の並列部分（${p1.r1} Ω と ${p1.r2} Ω）の合成抵抗は ${fmt(p1.a)} Ω\n・右側の並列部分（${p2.r1} Ω と ${p2.r2} Ω）の合成抵抗は ${fmt(p2.a)} Ω\nこの2つのブロックが直列につながっているため、最後に足し合わせます。\n【計算】 ${fmt(p1.a)} + ${fmt(p2.a)} = ${fmt(Rt)} Ω`;
+    }
+
+    // 3. 全体の電流(I)と電源電圧(V)
+    let I = [1, 2, 3, 4][Math.floor(Math.random() * 4)];
+    let V = Math.round(I * Rt * 10) / 10;
+
+    // 4. 出題モード
+    let qMode = mode;
+    if (selectedFocus === 'ohm') qMode = (Math.random() < 0.8) ? 'triathlon' : 'resistance';
+    else if (selectedFocus === 'resistance') qMode = (Math.random() < 0.8) ? 'resistance' : 'triathlon';
+    else if (mode === 'random') qMode = (Math.random() > 0.5) ? 'resistance' : 'triathlon';
+
+    if (qMode === 'resistance') {
+        return {
+            mode: 'res', type: type, r: r, Rt: Rt, I: I, V: V, target: 'Rt', ans: Rt,
+            qText: "この回路全体の「全体の抵抗（合成抵抗）」を求めなさい。",
+            unit: "Ω", category: type,
+            exp: `【解説】\n${expRes}`
+        };
+    } else {
+        let target = ['I', 'V', 'R'][Math.floor(Math.random() * 3)];
+        let qText = ""; let unit = ""; let ans = 0; let exp = "";
+
+        if (target === 'I') {
+            qText = "回路全体を流れる電流 I を求めなさい。"; unit = "A"; ans = I;
+            exp = `【解説】\nオームの法則「全体の電流(A) ＝ 全体の電圧(V) ÷ 全体の抵抗(Ω)」を使います。\n\n① まず、回路図から全体の抵抗（合成抵抗）を計算します。\n${expRes}\n\n② 全体の抵抗が ${fmt(Rt)} Ω とわかったので、電源の全体電圧 ${fmt(V)} V をこれで割ります。\n【計算】 ${fmt(V)} V ÷ ${fmt(Rt)} Ω = ${fmt(ans)} A`;
+        } else if (target === 'V') {
+            qText = "電源の電圧 V を求めなさい。"; unit = "V"; ans = V;
+            exp = `【解説】\nオームの法則「全体の電圧(V) ＝ 全体の電流(A) × 全体の抵抗(Ω)」を使います。\n\n① まず、回路図から全体の抵抗（合成抵抗）を計算します。\n${expRes}\n\n② 全体の抵抗が ${fmt(Rt)} Ω とわかったので、全体の電流 ${fmt(I)} A をかけます。\n【計算】 ${fmt(I)} A × ${fmt(Rt)} Ω = ${fmt(ans)} V`;
+        } else {
+            qText = "回路全体の合成抵抗 R を求めなさい。\n(※この問題ではオームの法則の練習のため、個別の抵抗値が隠されています)"; unit = "Ω"; ans = Rt;
+            exp = `【解説】\nオームの法則「全体の抵抗(Ω) ＝ 全体の電圧(V) ÷ 全体の電流(A)」を使います。\n\n回路図に示されている全体の電圧（電源電圧） ${fmt(V)} V と、全体を流れる電流 ${fmt(I)} A から直接求めることができます。\n【計算】 ${fmt(V)} V ÷ ${fmt(I)} A = ${fmt(ans)} Ω\n\n(参考：隠されていた個々の抵抗値の合成プロセスは以下の通りです)\n${expRes}`;
+        }
+
+        return {
+            mode: 'tri', type: type, r: r, Rt: Rt, I: I, V: V, target: target, ans: ans, qText: qText, unit: unit, category: target, exp: exp
+        };
+    }
+}
+
+function showQuestion() {
+    shownFlags[currentIdx] = true; // タイムアップ時に「未回答」として解説対象にするための記録
+    document.getElementById('info-progress').innerText = isEndless ? `正解 ${currentCorrectCount}（挑戦中）` : `${currentCorrectCount + 1} / ${initialTotalQuestions}`;
+    let q = questions[currentIdx];
+    document.getElementById('question-text').innerText = q.qText;
+    document.getElementById('unit-display').innerText = " " + q.unit;
+    
+    let fb = document.getElementById('feedback-msg');
+    fb.innerText = ""; fb.className = "feedback-area";
+
+    document.getElementById('circuit-area').innerHTML = drawSVG(q);
+    
+    let inputEl = document.getElementById('student-ans');
+    inputEl.value = ''; inputEl.focus();
+}
+
+function submitAnswer() {
+    let inputEl = document.getElementById('student-ans');
+    let val = parseFloat(inputEl.value);
+    let q = questions[currentIdx];
+    let fb = document.getElementById('feedback-msg');
+
+    if (isNaN(val)) {
+        fb.innerText = "数字を入力してください！";
+        fb.className = "feedback-area feedback-wrong";
+        inputEl.focus(); return;
+    }
+
+    // 丸め誤差を考慮した厳密な判定
+    if (Math.abs(val - q.ans) < 0.01) {
+        studentAnswers[currentIdx] = 'correct';
+        currentCorrectCount++; currentIdx++;
+        if (isEndless) {
+            questions.push(generateQuestionData(selectedMode, 'superoni', questions.length));
+            showQuestion();
+        } else if (currentCorrectCount < initialTotalQuestions) {
+            showQuestion();
+        } else {
+            endQuiz(true);
+        }
+    } else {
+        // ★この問題で間違えたことを記録（タイムアタックでやり直して最終的に正解しても、
+        //   一度つまずいたという事実は結果画面の解説に残す）
+        mistakeCounts[currentIdx] = (mistakeCounts[currentIdx] || 0) + 1;
+        totalMistakes++;
+        document.getElementById('info-mistakes').innerText = totalMistakes;
+
+        if (selectedDiff === 'oni' || (selectedDiff === 'superoni' && timeType === 'ta')) {
+            clearInterval(timerId);
+            studentAnswers[currentIdx] = 'miss_dead';
+            const msg = selectedDiff === 'superoni'
+                ? `ロード・オブ・マスター タイムアタック：${currentCorrectCount}問連続正解で終了！`
+                : "鬼モード：1回ミスしたため終了！";
+            endQuiz(false, msg);
+            return;
+        }
+        fb.innerText = `ちがいます。もういちど計算しなおしてみよう。`;
+        fb.className = "feedback-area feedback-wrong";
+        fb.style.animation = 'none'; fb.offsetHeight; fb.style.animation = null;
+        inputEl.focus(); inputEl.select();
+    }
+}
+
+function passQuestion() {
+    if(selectedDiff === 'oni' || selectedDiff === 'superoni' || usedPassCount >= maxPassCount) return;
+    usedPassCount++;
+    studentAnswers[currentIdx] = 'passed'; 
+    questions.push(generateQuestionData(selectedMode, selectedDiff, questions.length));
+    currentIdx++;
+    updatePassButtonText();
+    showQuestion();
+}
+
+function handleTimer() {
+    if (timeType === 'ta') { timerSeconds++; } 
+    else {
+        timerSeconds--;
+        if (timerSeconds <= 0) {
+            timerSeconds = 0; clearInterval(timerId);
+            if (isEndless) endQuiz(true, `ロード・オブ・マスター カウントダウン：${currentCorrectCount}問正解！`);
+            else endQuiz(false, "タイムアップ！時間切れです。");
+            return;
+        }
+    }
+    updateTimerDisplay();
+}
+
+function updateTimerDisplay() {
+    let m = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+    let s = (timerSeconds % 60).toString().padStart(2, '0');
+    document.getElementById('info-timer').innerText = `${m}:${s}`;
+}
+
+function endQuiz(isSuccess, message = "") {
+    clearInterval(timerId);
+    document.getElementById('screen-test').classList.add('hidden');
+    document.getElementById('screen-result').classList.remove('hidden');
+    
+    let titleEl = document.getElementById('res-title');
+    let scoreEl = document.getElementById('res-score');
+    let timeEl = document.getElementById('res-time');
+    
+    if (isEndless) {
+        titleEl.innerText = timeType === 'ta' ? "👹 ロード・オブ・マスター タイムアタック終了" : "👹 ロード・オブ・マスター カウントダウン終了";
+        scoreEl.innerText = message || `${currentCorrectCount}問正解しました。`;
+        scoreEl.style.color = "#6b21a8";
+    } else if(isSuccess) {
+        titleEl.innerText = "🎉 テスト完全クリア！";
+        scoreEl.innerText = `素晴らしい！目標の ${initialTotalQuestions}問をすべて正解しました。`;
+        scoreEl.style.color = "var(--success)";
+    } else {
+        titleEl.innerText = "❌ 終了";
+        scoreEl.innerText = message ? message : "目標クリアならず！";
+        scoreEl.style.color = "var(--danger)";
+    }
+
+    if (timeType === 'ta') {
+        timeEl.innerText = `かかった時間: ${Math.floor(timerSeconds/60)}分 ${timerSeconds%60}秒 ／ パス使用: ${usedPassCount}回 ／ 累計ミス: ${totalMistakes}回`;
+    } else {
+        let baseTime = countdownStartSeconds || parseInt(document.querySelector('input[name="countdown-val"]:checked').value);
+        let used = baseTime - timerSeconds;
+        timeEl.innerText = `消費時間: ${Math.floor(used/60)}分 ${used%60}秒 (のこり ${Math.floor(timerSeconds/60)}分 ${timerSeconds%60}秒) ／ 累計ミス: ${totalMistakes}回`;
+    }
+
+    updateRankingAfterQuiz(isSuccess);
+
+    // ★見直し対象の判定を拡張：
+    //  ・パスした問題
+    //  ・鬼モードでミスして即終了した問題
+    //  ・カウントダウンの時間切れで未回答だった問題（実際に画面に表示されたもののみ）
+    //  ・タイムアタックなどでやり直して最終的に正解した問題（間違えた事実は記録して見せる）
+    let reviewHtml = '';
+    let missedQuestions = [];
+    for (let i = 0; i < questions.length; i++) {
+        let q = questions[i];
+        let status = studentAnswers[i] || 'unanswered';
+        let mistakes = mistakeCounts[i] || 0;
+        let wasShown = !!shownFlags[i];
+        let badgeHtml = '';
+        let shouldShow = false;
+
+        if (status === 'passed') {
+            shouldShow = true;
+            badgeHtml = `<span class="badge badge-pass">飛ばした</span>`;
+        } else if (status === 'miss_dead') {
+            shouldShow = true;
+            badgeHtml = `<span class="badge badge-miss">ミス</span>`;
+        } else if (status === 'unanswered' && wasShown) {
+            shouldShow = true;
+            badgeHtml = `<span class="badge badge-timeout">時間切れ・未回答</span>`;
+        } else if (status === 'correct' && mistakes > 0) {
+            shouldShow = true;
+            badgeHtml = `<span class="badge badge-retry">${mistakes}回まちがえて正解</span>`;
+        }
+
+        if (shouldShow) {
+            missedQuestions.push(q);
+            reviewHtml += `
+                <div class="review-item">
+                    <div>${badgeHtml} <b>問題 ${i+1}:</b> ${q.qText}</div>
+                    <div style="display:flex; justify-content:center; background:#fff; padding:10px; margin:10px 0;">${drawSVG(q, true)}</div>
+                    <div>正解: <b style="color:var(--success);">${fmt(q.ans)} ${q.unit}</b></div>
+                    <div class="review-explanation">${q.exp}</div>
+                </div>`;
+        }
+    }
+
+    if (reviewHtml) {
+        document.getElementById('review-section').classList.remove('hidden');
+        document.getElementById('review-list').innerHTML = reviewHtml;
+    } else {
+        document.getElementById('review-section').classList.add('hidden');
+    }
+
+    // 「まちがえた問題だけもう一度解く」ボタンの表示切り替え
+    let retryBtn = document.getElementById('retry-missed-btn');
+    if (missedQuestions.length > 0) {
+        retryBtn.classList.remove('hidden');
+        retryBtn.innerText = `まちがえた問題だけもう一度解く 🔄 (${missedQuestions.length}問)`;
+        retryBtn.onclick = function () { startReviewSession(missedQuestions); };
+    } else {
+        retryBtn.classList.add('hidden');
+    }
+}
+
+
+const RANKING_KEY = 'electricCurrentMasterRankingsV3';
+const DIFF_LABELS = {easy:'初級', normal:'中級', hard:'上級', oni:'鬼', superoni:'ロード・オブ・マスター'};
+
+function loadRankings() {
+    try { return JSON.parse(localStorage.getItem(RANKING_KEY)) || {}; }
+    catch (e) { return {}; }
+}
+
+function saveRankings(data) {
+    try { localStorage.setItem(RANKING_KEY, JSON.stringify(data)); }
+    catch (e) { console.warn('ランキングを保存できませんでした。', e); }
+}
+
+function formatRankRecord(r, diff) {
+    if (diff === 'superoni') return `${escapeHtml(r.name)}：${r.score}問（${formatTime(r.time)}）`;
+    return `${escapeHtml(r.name)}：${formatTime(r.time)}`;
+}
+
+function formatTime(sec) {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m}分${String(s).padStart(2,'0')}秒`;
+}
+
+function escapeHtml(str) {
+    return String(str).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+}
+
+function renderRankings() {
+    const grid = document.getElementById('ranking-grid');
+    if (!grid) return;
+    const data = loadRankings();
+    grid.innerHTML = ['easy','normal','hard','oni','superoni'].map(diff => {
+        const rows = data[diff] || [];
+        const list = rows.length ? rows.map(r => `<li>${formatRankRecord(r, diff)}</li>`).join('') : '<li>記録なし</li>';
+        return `<div class="ranking-card"><h4>${DIFF_LABELS[diff]}</h4><ol>${list}</ol></div>`;
+    }).join('');
+}
+
+function updateRankingAfterQuiz(isSuccess) {
+    const box = document.getElementById('rank-result');
+    box.classList.add('hidden');
+    box.innerHTML = '';
+    if (timeType !== 'ta' || selectedDiff === 'review') return;
+    if (selectedDiff !== 'superoni' && !isSuccess) return;
+
+    const data = loadRankings();
+    const rows = data[selectedDiff] || [];
+    const record = {
+        name: playerName || '名前なし',
+        time: timerSeconds,
+        score: currentCorrectCount,
+        mode: selectedMode,
+        savedAt: Date.now()
+    };
+    rows.push(record);
+    if (selectedDiff === 'superoni') {
+        rows.sort((a,b) => (b.score - a.score) || (a.time - b.time) || (a.savedAt - b.savedAt));
+    } else {
+        rows.sort((a,b) => (a.time - b.time) || (a.savedAt - b.savedAt));
+    }
+    data[selectedDiff] = rows.slice(0,3);
+    saveRankings(data);
+    renderRankings();
+
+    const rank = data[selectedDiff].findIndex(r => r.savedAt === record.savedAt) + 1;
+    if (rank > 0) {
+        box.classList.remove('hidden');
+        box.innerHTML = `<b>🏆 ${DIFF_LABELS[selectedDiff]}ランキング ${rank}位に入りました！</b><br>${formatRankRecord(record, selectedDiff)}`;
+    }
+}
+
+function clearRankings() {
+    if (!confirm('この端末に保存されているランキングをすべて消去しますか？')) return;
+    localStorage.removeItem(RANKING_KEY);
+    renderRankings();
+}
+
+window.addEventListener('DOMContentLoaded', renderRankings);
+
+// 見直し専用の再挑戦セッション（パスなし・タイムアタック・鬼判定なしの練習モード）
+function startReviewSession(missedList) {
+    clearInterval(timerId);
+    questions = missedList.slice();
+    initialTotalQuestions = questions.length;
+    studentAnswers = [];
+    mistakeCounts = {}; shownFlags = {}; totalMistakes = 0;
+    currentCorrectCount = 0; currentIdx = 0;
+    usedPassCount = 0; maxPassCount = 0;
+    selectedDiff = 'review'; isEndless = false; // 鬼モードの即終了判定などを無効化するため
+    timeType = 'ta'; timerSeconds = 0;
+
+    document.getElementById('timer-label').innerText = "すすんだ時間";
+    document.getElementById('info-mistakes').innerText = '0';
+    updatePassButtonText();
+
+    document.getElementById('screen-result').classList.add('hidden');
+    document.getElementById('screen-test').classList.remove('hidden');
+
+    updateTimerDisplay();
+    timerId = setInterval(handleTimer, 1000);
+    showQuestion();
+}
+
+function backToSetup() {
+    clearInterval(timerId);
+    document.getElementById('screen-result').classList.add('hidden');
+    document.getElementById('screen-test').classList.add('hidden');
+    document.getElementById('screen-setup').classList.remove('hidden');
+    renderRankings();
+}
+
+// 刷新された完全連動型高品質SVG生成エンジン
+function drawSVG(q, isReview = false) {
+    let type = q.type;
+    
+    let r1 = "?? Ω", r2 = "?? Ω", r3 = "?? Ω", r4 = "?? Ω";
+    let vStr = "電源";
+    let iStr = "";
+
+    // 抵抗値の表示・非表示の制御
+    if (q.mode === 'res' || (q.mode === 'tri' && q.target !== 'R') || isReview) {
+        r1 = q.r[0] ? fmt(q.r[0]) + "Ω" : "";
+        r2 = q.r[1] ? fmt(q.r[1]) + "Ω" : "";
+        r3 = q.r[2] ? fmt(q.r[2]) + "Ω" : "";
+        r4 = q.r[3] ? fmt(q.r[3]) + "Ω" : "";
+    } else {
+        // オームの法則で全体抵抗 R を求める問題かつ演習中の場合のみ、ヒントにならないよう個別の値を隠す
+        r1 = "?? Ω";
+        r2 = q.r[1] ? "?? Ω" : "";
+        r3 = q.r[2] ? "?? Ω" : "";
+        r4 = q.r[3] ? "?? Ω" : "";
+    }
+
+    // 電圧・電流の表示制御
+    if (q.mode === 'res') {
+        vStr = "電源";
+        iStr = ""; 
+    } else {
+        vStr = (q.target === 'V' && !isReview) ? "電源: ? V" : `電源: ${fmt(q.V)}V`;
+        iStr = (q.target === 'I' && !isReview) ? "全体: ? A" : `全体: ${fmt(q.I)}A`;
+    }
+
+    const box = (x, y, txt) => `<rect x="${x}" y="${y}" width="42" height="20" fill="white" stroke="black" stroke-width="2"/><text x="${x+21}" y="${y+14}" font-size="10" font-weight="bold" text-anchor="middle">${txt}</text>`;
+    
+    let inner = "";
+    // 基本の外枠回路（電源と電流計）
+    inner += `<line x1="30" y1="50" x2="30" y2="140" stroke="black" stroke-width="2"/>`;
+    inner += `<line x1="290" y1="50" x2="290" y2="140" stroke="black" stroke-width="2"/>`;
+    inner += `<line x1="30" y1="140" x2="135" y2="140" stroke="black" stroke-width="2"/>`;
+    inner += `<line x1="165" y1="140" x2="290" y2="140" stroke="black" stroke-width="2"/>`;
+    // 電源マーク
+    inner += `<line x1="145" y1="125" x2="145" y2="155" stroke="black" stroke-width="2"/>`;
+    inner += `<line x1="155" y1="133" x2="155" y2="147" stroke="black" stroke-width="4"/>`;
+    inner += `<text x="150" y="172" font-size="12" font-weight="bold" text-anchor="middle">${vStr}</text>`;
+    // 電流計マーク
+    inner += `<circle cx="30" cy="95" r="10" fill="white" stroke="black" stroke-width="2"/>`;
+    inner += `<text x="30" y="99" font-size="11" font-weight="bold" text-anchor="middle">A</text>`;
+    if (iStr) {
+        inner += `<text x="55" y="100" font-size="11" font-weight="bold">${iStr}</text>`;
+    }
+
+    // 回路タイプごとの中身分岐
+    if (type === 's1') {
+        inner += `<line x1="30" y1="50" x2="290" y2="50" stroke="black" stroke-width="2"/>`;
+        inner += box(139, 40, r1);
+    } else if (type === 's2') {
+        inner += `<line x1="30" y1="50" x2="290" y2="50" stroke="black" stroke-width="2"/>`;
+        inner += box(80, 40, r1); inner += box(190, 40, r2);
+    } else if (type === 'p2') {
+        inner += `<line x1="30" y1="50" x2="100" y2="50" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="220" y1="50" x2="290" y2="50" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="100" y1="25" x2="100" y2="75" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="220" y1="25" x2="220" y2="75" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="100" y1="25" x2="139" y2="25" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="181" y1="25" x2="220" y2="25" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="100" y1="75" x2="139" y2="75" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="181" y1="75" x2="220" y2="75" stroke="black" stroke-width="2"/>`;
+        inner += box(139, 15, r1); inner += box(139, 65, r2);
+    } else if (type === 'm3a') {
+        inner += `<line x1="30" y1="50" x2="140" y2="50" stroke="black" stroke-width="2"/>`;
+        inner += box(65, 40, r1);
+        inner += `<line x1="140" y1="25" x2="140" y2="75" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="240" y1="25" x2="240" y2="75" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="140" y1="25" x2="165" y2="25" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="207" y1="25" x2="240" y2="25" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="140" y1="75" x2="165" y2="75" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="207" y1="75" x2="240" y2="75" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="240" y1="50" x2="290" y2="50" stroke="black" stroke-width="2"/>`;
+        inner += box(165, 15, r2); inner += box(165, 65, r3);
+    } else if (type === 'm4a') {
+        inner += `<line x1="30" y1="50" x2="50" y2="50" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="50" y1="25" x2="50" y2="75" stroke="black" stroke-width="2"/>`;
+        inner += box(75, 15, r1); inner += box(75, 65, r2);
+        inner += `<line x1="50" y1="25" x2="75" y2="25" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="117" y1="25" x2="140" y2="25" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="50" y1="75" x2="75" y2="75" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="117" y1="75" x2="140" y2="75" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="140" y1="25" x2="140" y2="75" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="140" y1="50" x2="170" y2="50" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="170" y1="25" x2="170" y2="75" stroke="black" stroke-width="2"/>`;
+        inner += box(195, 15, r3); inner += box(195, 65, r4);
+        inner += `<line x1="170" y1="25" x2="195" y2="25" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="237" y1="25" x2="260" y2="25" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="170" y1="75" x2="195" y2="75" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="237" y1="75" x2="260" y2="75" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="260" y1="25" x2="260" y2="75" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="260" y1="50" x2="290" y2="50" stroke="black" stroke-width="2"/>`;
+    }
+
+    return `<svg width="100%" height="auto" viewBox="0 0 320 185" xmlns="http://www.w3.org/2000/svg" style="max-width:380px;">${inner}</svg>`;
+}
+</script>
+</body>
+</html>
