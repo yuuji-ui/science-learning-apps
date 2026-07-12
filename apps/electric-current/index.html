@@ -65,6 +65,13 @@
         .btn-fs { background-color: #7f8c8d; color: white; border: none; padding: 8px 14px; font-size: 14px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         .btn-reset-top { background-color: #e2e8f0; color: #4a5568; border: 1px solid #cbd5e0; padding: 8px 14px; font-size: 14px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         .btn-reset-top:hover { background-color: #edf2f7; }
+        .fullscreen-exit { position:fixed; top:10px; right:10px; z-index:100001; background:var(--danger); color:#fff; border:none; border-radius:7px; padding:9px 13px; font-weight:bold; cursor:pointer; display:none; }
+        .pseudo-fullscreen .fullscreen-exit { display:block; }
+        .btn-giveup { background:#64748b; color:#fff; font-size:15px; }
+        .ranking-period-tabs { display:flex; gap:6px; flex-wrap:wrap; margin:8px 0 10px; }
+        .ranking-period-tabs button { flex:1; min-width:110px; border:1px solid #cbd5e0; background:#fff; padding:8px; border-radius:6px; cursor:pointer; font-weight:bold; }
+        .ranking-period-tabs button.active { background:#ebf8ff; border-color:var(--accent); color:var(--accent); }
+        .my-rank { margin-top:7px; padding:6px 8px; background:#fff8db; border-radius:5px; font-weight:bold; font-size:13px; }
         .setting-section { background: #edf2f7; padding: 15px; border-radius: 8px; margin: 15px 0; }
         .setting-group { margin-bottom: 15px; }
         .setting-group label { font-weight: bold; display: block; margin-bottom: 6px; color: var(--primary); }
@@ -132,6 +139,7 @@
 </div>
 
 <div class="container" id="quiz-container">
+    <button id="fullscreen-exit-btn" class="fullscreen-exit" onclick="exitFullscreenMode()">全画面を終了 ✖</button>
     <div id="screen-setup">
         <h1>🔌 理科小テスト：電流マスター 改良版 ⚡</h1>
         <div class="setting-section">
@@ -167,20 +175,20 @@
                 <label>【3】時間ルールをえらぶ</label>
                 <div class="radio-box">
                     <input type="radio" id="time-ta" name="time-rule-type" value="ta" checked onclick="toggleTimeDetail(false)">
-                    <label for="time-ta">⏱️ タイムアタック<br><small>(制限時間なし)</small></label>
+                    <label for="time-ta">⏱️ タイムアタック<br><small>(1問60秒以内)</small></label>
                     <input type="radio" id="time-cd" name="time-rule-type" value="cd" onclick="toggleTimeDetail(true)">
                     <label for="time-cd">⏳ カウントダウン<br><small>(制限時間あり)</small></label>
                 </div>
                 <div id="countdown-options" class="sub-time-box hidden">
-                    <input type="radio" id="cd-1m" name="countdown-val" value="60">
+                    <input type="radio" id="cd-1m" name="countdown-val" value="60" onchange="renderRankings()">
                     <label for="cd-1m">1分</label>
-                    <input type="radio" id="cd-3m" name="countdown-val" value="180">
+                    <input type="radio" id="cd-3m" name="countdown-val" value="180" onchange="renderRankings()">
                     <label for="cd-3m">3分</label>
-                    <input type="radio" id="cd-5m" name="countdown-val" value="300" checked>
+                    <input type="radio" id="cd-5m" name="countdown-val" value="300" onchange="renderRankings()" checked>
                     <label for="cd-5m">5分</label>
-                    <input type="radio" id="cd-7m" name="countdown-val" value="420">
+                    <input type="radio" id="cd-7m" name="countdown-val" value="420" onchange="renderRankings()">
                     <label for="cd-7m">7分</label>
-                    <input type="radio" id="cd-10m" name="countdown-val" value="600">
+                    <input type="radio" id="cd-10m" name="countdown-val" value="600" onchange="renderRankings()">
                     <label for="cd-10m">10分</label>
                 </div>
             </div>
@@ -203,10 +211,16 @@
             <div class="setting-group">
                 <label>【5】名前（タイムアタックランキング用）</label>
                 <input id="player-name" class="name-input" type="text" maxlength="12" placeholder="例：2年1組 田中" autocomplete="off">
-                <small style="display:block;margin-top:5px;color:#64748b;">タイムアタックを選んだ場合だけ使用します。記録はこの端末内に保存されます。</small>
+                <small style="display:block;margin-top:5px;color:#64748b;">タイムアタック、またはロード・オブ・マスターのカウントダウンランキングで使用します。</small>
             </div>
             <div class="ranking-panel">
-                <h3 style="margin:0 0 8px;color:var(--primary);">🏆 タイムアタックランキング（上位3人）</h3>
+                <h3 style="margin:0 0 4px;color:var(--primary);">🏆 スコアランキング（上位3人）</h3>
+                <small style="color:#64748b;">上級・鬼・ロード・オブ・マスターを表示します。ロード・オブ・マスターのカウントダウンは、現在選択中の制限時間ごとに集計します。</small>
+                <div class="ranking-period-tabs">
+                    <button type="button" id="period-today" class="active" onclick="setRankingPeriod('today')">今日</button>
+                    <button type="button" id="period-week" onclick="setRankingPeriod('week')">今週</button>
+                    <button type="button" id="period-all" onclick="setRankingPeriod('all')">歴代</button>
+                </div>
                 <div id="ranking-grid" class="ranking-grid"></div>
                 <button type="button" class="btn-reset-top" style="margin-top:10px;" onclick="clearRankings()">ランキングを消去</button>
             </div>
@@ -246,6 +260,7 @@
             </div>
         </div>
         <div class="btn-action-group">
+            <button class="btn btn-giveup" onclick="abandonQuiz()">途中で諦める</button>
             <button class="btn btn-pass" id="pass-btn" onclick="passQuestion()">わからないから飛ばす ↩</button>
             <button class="btn btn-submit" onclick="submitAnswer()">こたえあわせ (Enter) ➔</button>
         </div>
@@ -305,20 +320,33 @@ let isFullscreenMode = false;
 let mistakeCounts = {};   // 問題ごとの間違えた回数（タイムアタックのやり直し分も記録）
 let shownFlags = {};      // その問題を実際に画面に表示したかどうか（時間切れ未回答の判定に使用）
 let totalMistakes = 0;    // 累計ミス回数（ステータスバー表示用）
+let questionElapsedSeconds = 0; // タイムアタック時の1問ごとの経過時間（画面には表示しない）
+let rankingPeriod = 'today';
+let quizAbandoned = false;
+let currentStreak = 0;
+let bestStreak = 0;
 
 function toggleFullscreen() {
+    if (isFullscreenMode) exitFullscreenMode();
+    else enterFullscreenMode();
+}
+
+function enterFullscreenMode() {
     const container = document.getElementById('quiz-container');
     const btn = document.getElementById('fullscreen-btn');
-    isFullscreenMode = !isFullscreenMode;
-    if (isFullscreenMode) {
-        container.classList.add('pseudo-fullscreen');
-        btn.innerText = 'もとの大きさに戻す ✖';
-        btn.style.backgroundColor = 'var(--danger)';
-    } else {
-        container.classList.remove('pseudo-fullscreen');
-        btn.innerText = '全画面にする ⛶';
-        btn.style.backgroundColor = '#7f8c8d';
-    }
+    isFullscreenMode = true;
+    container.classList.add('pseudo-fullscreen');
+    btn.innerText = '全画面を終了 ✖';
+    btn.style.backgroundColor = 'var(--danger)';
+}
+
+function exitFullscreenMode() {
+    const container = document.getElementById('quiz-container');
+    const btn = document.getElementById('fullscreen-btn');
+    isFullscreenMode = false;
+    container.classList.remove('pseudo-fullscreen');
+    btn.innerText = '全画面にする ⛶';
+    btn.style.backgroundColor = '#7f8c8d';
 }
 
 function confirmBackToSetup() {
@@ -360,8 +388,9 @@ function startQuiz() {
     selectedFocus = document.querySelector('input[name="focus-type"]:checked').value;
     timeType = document.querySelector('input[name="time-rule-type"]:checked').value;
     playerName = document.getElementById('player-name').value.trim();
-    if (timeType === 'ta' && !playerName) {
-        alert('タイムアタックランキング用の名前を入力してください。');
+    const needsRankingName = timeType === 'ta' || (selectedDiff === 'superoni' && timeType === 'cd');
+    if (needsRankingName && !playerName) {
+        alert('ランキング用の名前を入力してください。');
         document.getElementById('player-name').focus();
         return;
     }
@@ -374,6 +403,7 @@ function startQuiz() {
     else if (selectedDiff === 'superoni') { initialTotalQuestions = Infinity; maxPassCount = 0; }
 
     usedPassCount = 0; currentCorrectCount = 0; currentIdx = 0;
+    quizAbandoned = false; questionElapsedSeconds = 0; currentStreak = 0; bestStreak = 0;
     studentAnswers = []; questions = [];
     mistakeCounts = {}; shownFlags = {}; totalMistakes = 0;
     document.getElementById('info-mistakes').innerText = '0';
@@ -517,6 +547,7 @@ function generateQuestionData(mode, diff, idx) {
 }
 
 function showQuestion() {
+    questionElapsedSeconds = 0;
     shownFlags[currentIdx] = true; // タイムアップ時に「未回答」として解説対象にするための記録
     document.getElementById('info-progress').innerText = isEndless ? `正解 ${currentCorrectCount}（挑戦中）` : `${currentCorrectCount + 1} / ${initialTotalQuestions}`;
     let q = questions[currentIdx];
@@ -547,7 +578,12 @@ function submitAnswer() {
     // 丸め誤差を考慮した厳密な判定
     if (Math.abs(val - q.ans) < 0.01) {
         studentAnswers[currentIdx] = 'correct';
-        currentCorrectCount++; currentIdx++;
+        currentCorrectCount++;
+        if (isEndless) {
+            currentStreak++;
+            bestStreak = Math.max(bestStreak, currentStreak);
+        }
+        currentIdx++;
         if (isEndless) {
             questions.push(generateQuestionData(selectedMode, 'superoni', questions.length));
             showQuestion();
@@ -562,6 +598,8 @@ function submitAnswer() {
         mistakeCounts[currentIdx] = (mistakeCounts[currentIdx] || 0) + 1;
         totalMistakes++;
         document.getElementById('info-mistakes').innerText = totalMistakes;
+
+        if (selectedDiff === 'superoni' && timeType === 'cd') currentStreak = 0;
 
         if (selectedDiff === 'oni' || (selectedDiff === 'superoni' && timeType === 'ta')) {
             clearInterval(timerId);
@@ -579,6 +617,14 @@ function submitAnswer() {
     }
 }
 
+function abandonQuiz() {
+    if (!confirm('ここで終了しますか？今回の記録はランキングにも学習記録にも残りません。')) return;
+    quizAbandoned = true;
+    clearInterval(timerId);
+    alert('今回の挑戦を終了しました。記録は保存されません。');
+    backToSetup();
+}
+
 function passQuestion() {
     if(selectedDiff === 'oni' || selectedDiff === 'superoni' || usedPassCount >= maxPassCount) return;
     usedPassCount++;
@@ -590,12 +636,20 @@ function passQuestion() {
 }
 
 function handleTimer() {
-    if (timeType === 'ta') { timerSeconds++; } 
-    else {
+    if (timeType === 'ta') {
+        timerSeconds++;
+        questionElapsedSeconds++;
+        if (questionElapsedSeconds >= 60) {
+            clearInterval(timerId);
+            studentAnswers[currentIdx] = 'question_timeout';
+            endQuiz(false, 'そこまで！この問題の制限時間1分を超えました。', { skipRanking: true });
+            return;
+        }
+    } else {
         timerSeconds--;
         if (timerSeconds <= 0) {
             timerSeconds = 0; clearInterval(timerId);
-            if (isEndless) endQuiz(true, `ロード・オブ・マスター カウントダウン：${currentCorrectCount}問正解！`);
+            if (isEndless) endQuiz(true, `ロード・オブ・マスター カウントダウン：合計${currentCorrectCount}問正解・最大${bestStreak}問連続正解！`);
             else endQuiz(false, "タイムアップ！時間切れです。");
             return;
         }
@@ -609,7 +663,7 @@ function updateTimerDisplay() {
     document.getElementById('info-timer').innerText = `${m}:${s}`;
 }
 
-function endQuiz(isSuccess, message = "") {
+function endQuiz(isSuccess, message = "", options = {}) {
     clearInterval(timerId);
     document.getElementById('screen-test').classList.add('hidden');
     document.getElementById('screen-result').classList.remove('hidden');
@@ -640,7 +694,7 @@ function endQuiz(isSuccess, message = "") {
         timeEl.innerText = `消費時間: ${Math.floor(used/60)}分 ${used%60}秒 (のこり ${Math.floor(timerSeconds/60)}分 ${timerSeconds%60}秒) ／ 累計ミス: ${totalMistakes}回`;
     }
 
-    updateRankingAfterQuiz(isSuccess);
+    if (!options.skipRanking && !quizAbandoned) updateRankingAfterQuiz(isSuccess);
 
     // ★見直し対象の判定を拡張：
     //  ・パスした問題
@@ -663,9 +717,9 @@ function endQuiz(isSuccess, message = "") {
         } else if (status === 'miss_dead') {
             shouldShow = true;
             badgeHtml = `<span class="badge badge-miss">ミス</span>`;
-        } else if (status === 'unanswered' && wasShown) {
+        } else if ((status === 'unanswered' && wasShown) || status === 'question_timeout') {
             shouldShow = true;
-            badgeHtml = `<span class="badge badge-timeout">時間切れ・未回答</span>`;
+            badgeHtml = `<span class="badge badge-timeout">1問の制限時間切れ</span>`;
         } else if (status === 'correct' && mistakes > 0) {
             shouldShow = true;
             badgeHtml = `<span class="badge badge-retry">${mistakes}回まちがえて正解</span>`;
@@ -702,22 +756,19 @@ function endQuiz(isSuccess, message = "") {
 }
 
 
-const RANKING_KEY = 'electricCurrentMasterRankingsV3';
-const DIFF_LABELS = {easy:'初級', normal:'中級', hard:'上級', oni:'鬼', superoni:'ロード・オブ・マスター'};
+const RANKING_KEY = 'electricCurrentMasterRankingsV4';
+const DIFF_LABELS = {hard:'上級', oni:'鬼', superoni:'ロード・オブ・マスター'};
 
 function loadRankings() {
-    try { return JSON.parse(localStorage.getItem(RANKING_KEY)) || {}; }
-    catch (e) { return {}; }
+    try {
+        const parsed = JSON.parse(localStorage.getItem(RANKING_KEY));
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (e) { return []; }
 }
 
-function saveRankings(data) {
-    try { localStorage.setItem(RANKING_KEY, JSON.stringify(data)); }
+function saveRankings(records) {
+    try { localStorage.setItem(RANKING_KEY, JSON.stringify(records)); }
     catch (e) { console.warn('ランキングを保存できませんでした。', e); }
-}
-
-function formatRankRecord(r, diff) {
-    if (diff === 'superoni') return `${escapeHtml(r.name)}：${r.score}問（${formatTime(r.time)}）`;
-    return `${escapeHtml(r.name)}：${formatTime(r.time)}`;
 }
 
 function formatTime(sec) {
@@ -730,14 +781,78 @@ function escapeHtml(str) {
     return String(str).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 }
 
+function startOfToday(now = new Date()) {
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+}
+
+function startOfWeek(now = new Date()) {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const day = d.getDay(); // 日曜0
+    const diffToMonday = day === 0 ? 6 : day - 1;
+    d.setDate(d.getDate() - diffToMonday);
+    return d.getTime();
+}
+
+function filterByPeriod(records, period) {
+    if (period === 'all') return records;
+    const boundary = period === 'today' ? startOfToday() : startOfWeek();
+    return records.filter(r => r.savedAt >= boundary);
+}
+
+function setRankingPeriod(period) {
+    rankingPeriod = period;
+    ['today','week','all'].forEach(p => {
+        const el = document.getElementById(`period-${p}`);
+        if (el) el.classList.toggle('active', p === period);
+    });
+    renderRankings();
+}
+
+function selectedCountdownSeconds() {
+    const selected = document.querySelector('input[name="countdown-val"]:checked');
+    return selected ? parseInt(selected.value, 10) : 300;
+}
+
+function rankingCategory(record) {
+    if (record.diff === 'hard' && record.timeType === 'ta') return 'hard-ta';
+    if (record.diff === 'oni' && record.timeType === 'ta') return 'oni-ta';
+    if (record.diff === 'superoni' && record.timeType === 'ta') return 'superoni-ta';
+    if (record.diff === 'superoni' && record.timeType === 'cd') return `superoni-cd-${record.duration}`;
+    return '';
+}
+
+function getCategoryInfo() {
+    const cd = selectedCountdownSeconds();
+    return [
+        {key:'hard-ta', title:'上級・タイムアタック', scoreType:'time'},
+        {key:'oni-ta', title:'鬼・タイムアタック', scoreType:'time'},
+        {key:'superoni-ta', title:'ロード・オブ・マスター・タイムアタック', scoreType:'score'},
+        {key:`superoni-cd-${cd}`, title:`ロード・オブ・マスター・カウントダウン（${Math.floor(cd/60)}分）`, scoreType:'score'}
+    ];
+}
+
+function sortCategory(records, scoreType) {
+    return records.slice().sort((a,b) => scoreType === 'time'
+        ? (a.time - b.time) || (a.savedAt - b.savedAt)
+        : (b.score - a.score) || (a.time - b.time) || (a.savedAt - b.savedAt));
+}
+
+function formatRankRecord(r, scoreType) {
+    return scoreType === 'time'
+        ? `${escapeHtml(r.name)}：${formatTime(r.time)}`
+        : `${escapeHtml(r.name)}：${r.score}問（${formatTime(r.time)}）`;
+}
+
 function renderRankings() {
     const grid = document.getElementById('ranking-grid');
     if (!grid) return;
-    const data = loadRankings();
-    grid.innerHTML = ['easy','normal','hard','oni','superoni'].map(diff => {
-        const rows = data[diff] || [];
-        const list = rows.length ? rows.map(r => `<li>${formatRankRecord(r, diff)}</li>`).join('') : '<li>記録なし</li>';
-        return `<div class="ranking-card"><h4>${DIFF_LABELS[diff]}</h4><ol>${list}</ol></div>`;
+    const all = filterByPeriod(loadRankings(), rankingPeriod);
+    const categories = getCategoryInfo();
+    grid.innerHTML = categories.map(cat => {
+        const rows = sortCategory(all.filter(r => rankingCategory(r) === cat.key), cat.scoreType);
+        const top3 = rows.slice(0,3);
+        const list = top3.length ? top3.map(r => `<li>${formatRankRecord(r, cat.scoreType)}</li>`).join('') : '<li>記録なし</li>';
+        return `<div class="ranking-card"><h4>${cat.title}</h4><ol>${list}</ol></div>`;
     }).join('');
 }
 
@@ -745,33 +860,44 @@ function updateRankingAfterQuiz(isSuccess) {
     const box = document.getElementById('rank-result');
     box.classList.add('hidden');
     box.innerHTML = '';
-    if (timeType !== 'ta' || selectedDiff === 'review') return;
+    if (selectedDiff === 'review') return;
+
+    const eligibleTA = timeType === 'ta' && ['hard','oni','superoni'].includes(selectedDiff);
+    const eligibleLordCD = timeType === 'cd' && selectedDiff === 'superoni';
+    if (!eligibleTA && !eligibleLordCD) return;
     if (selectedDiff !== 'superoni' && !isSuccess) return;
 
-    const data = loadRankings();
-    const rows = data[selectedDiff] || [];
     const record = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
         name: playerName || '名前なし',
-        time: timerSeconds,
-        score: currentCorrectCount,
+        time: timeType === 'ta' ? timerSeconds : (countdownStartSeconds - timerSeconds),
+        score: (selectedDiff === 'superoni' && timeType === 'cd') ? bestStreak : currentCorrectCount,
+        totalCorrect: currentCorrectCount,
+        diff: selectedDiff,
+        timeType,
+        duration: timeType === 'cd' ? countdownStartSeconds : null,
         mode: selectedMode,
         savedAt: Date.now()
     };
-    rows.push(record);
-    if (selectedDiff === 'superoni') {
-        rows.sort((a,b) => (b.score - a.score) || (a.time - b.time) || (a.savedAt - b.savedAt));
-    } else {
-        rows.sort((a,b) => (a.time - b.time) || (a.savedAt - b.savedAt));
-    }
-    data[selectedDiff] = rows.slice(0,3);
-    saveRankings(data);
+
+    const records = loadRankings();
+    records.push(record);
+    saveRankings(records);
     renderRankings();
 
-    const rank = data[selectedDiff].findIndex(r => r.savedAt === record.savedAt) + 1;
-    if (rank > 0) {
-        box.classList.remove('hidden');
-        box.innerHTML = `<b>🏆 ${DIFF_LABELS[selectedDiff]}ランキング ${rank}位に入りました！</b><br>${formatRankRecord(record, selectedDiff)}`;
-    }
+    const catKey = rankingCategory(record);
+    const scoreType = (selectedDiff === 'hard' || selectedDiff === 'oni') ? 'time' : 'score';
+    const periodLabels = {today:'今日', week:'今週', all:'歴代'};
+    const sections = ['today','week','all'].map(period => {
+        const rows = sortCategory(filterByPeriod(records, period).filter(r => rankingCategory(r) === catKey), scoreType);
+        const rank = rows.findIndex(r => r.id === record.id) + 1;
+        const top = rows.slice(0,3).map((r,i) => `<li>${i+1}位　${formatRankRecord(r, scoreType)}</li>`).join('') || '<li>記録なし</li>';
+        const mine = rank > 0 ? `<div class="my-rank">あなた：${rank}位　${formatRankRecord(record, scoreType)}</div>` : '';
+        return `<div style="margin-top:10px;"><b>${periodLabels[period]}のランキング</b><ol style="line-height:1.8;">${top}</ol>${mine}</div>`;
+    }).join('');
+
+    box.classList.remove('hidden');
+    box.innerHTML = `<h3 style="margin:0;color:var(--primary);">🏆 今回のランキング</h3>${sections}`;
 }
 
 function clearRankings() {
@@ -780,7 +906,10 @@ function clearRankings() {
     renderRankings();
 }
 
-window.addEventListener('DOMContentLoaded', renderRankings);
+window.addEventListener('DOMContentLoaded', () => {
+    setRankingPeriod('today');
+    document.getElementById('player-name')?.addEventListener('input', renderRankings);
+});
 
 // 見直し専用の再挑戦セッション（パスなし・タイムアタック・鬼判定なしの練習モード）
 function startReviewSession(missedList) {
@@ -791,7 +920,8 @@ function startReviewSession(missedList) {
     mistakeCounts = {}; shownFlags = {}; totalMistakes = 0;
     currentCorrectCount = 0; currentIdx = 0;
     usedPassCount = 0; maxPassCount = 0;
-    selectedDiff = 'review'; isEndless = false; // 鬼モードの即終了判定などを無効化するため
+    selectedDiff = 'review'; isEndless = false;
+    quizAbandoned = false; questionElapsedSeconds = 0; currentStreak = 0; bestStreak = 0; // 鬼モードの即終了判定などを無効化するため
     timeType = 'ta'; timerSeconds = 0;
 
     document.getElementById('timer-label').innerText = "すすんだ時間";
@@ -808,6 +938,7 @@ function startReviewSession(missedList) {
 
 function backToSetup() {
     clearInterval(timerId);
+    if (isFullscreenMode) exitFullscreenMode();
     document.getElementById('screen-result').classList.add('hidden');
     document.getElementById('screen-test').classList.add('hidden');
     document.getElementById('screen-setup').classList.remove('hidden');
