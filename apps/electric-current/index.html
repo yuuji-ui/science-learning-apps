@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>理科小テスト：電流マスター ロード・オブ・マスター版</title>
+    <title>理科小テスト：電流マスター 完成度向上版</title>
     <style>
         :root {
             --primary: #2c3e50;
@@ -161,13 +161,13 @@
                     <input type="radio" id="diff-easy" name="diff-level" value="easy" checked onclick="toggleOniSettings(false)">
                     <label for="diff-easy">🟢 初級（5問）<br><small>抵抗の数：1〜2個<br>パスの数：0回</small></label>
                     <input type="radio" id="diff-normal" name="diff-level" value="normal" onclick="toggleOniSettings(false)">
-                    <label for="diff-normal">🟡 中級（10問）<br><small>抵抗の数：2〜3個<br>パスの数：3回</small></label>
+                    <label for="diff-normal">🟡 中級（10問）<br><small>抵抗の数：2〜3個／パス3回</small></label>
                     <input type="radio" id="diff-hard" name="diff-level" value="hard" onclick="toggleOniSettings(false)">
-                    <label for="diff-hard">🔴 上級（15問）<br><small>抵抗の数：2〜4個<br>パスの数：1回</small></label>
+                    <label for="diff-hard">🔴 上級（15問）<br><small>抵抗の数：2〜4個／パス1回</small></label>
                     <input type="radio" id="diff-oni" name="diff-level" value="oni" onclick="toggleOniSettings(true)">
                     <label for="diff-oni" style="color:#c0392b; font-weight: bold;">😈 鬼（30問）<br><small>抵抗の数：3〜4個<br>パスなし・1ミスで終了</small></label>
                     <input type="radio" id="diff-superoni" name="diff-level" value="superoni" onclick="toggleOniSettings(true)">
-                    <label for="diff-superoni" style="color:#6b21a8; font-weight:bold;">👹 ロード・オブ・マスター（エンドレス）<br><small>鬼と同じ問題レベル<br>タイムアタック／時間内正解数</small></label>
+                    <label for="diff-superoni" style="color:#6b21a8; font-weight:bold;">👹 無双（エンドレス）<br><small>抵抗の数：3〜5個<br>パスなし・1ミスで終了</small></label>
                 </div>
             </div>
 
@@ -178,6 +178,8 @@
                     <label for="time-ta">⏱️ タイムアタック<br><small>(1問60秒以内)</small></label>
                     <input type="radio" id="time-cd" name="time-rule-type" value="cd" onclick="toggleTimeDetail(true)">
                     <label for="time-cd">⏳ カウントダウン<br><small>(制限時間あり)</small></label>
+                    <input type="radio" id="time-practice" name="time-rule-type" value="practice" onclick="toggleTimeDetail(false)">
+                    <label for="time-practice">✍️ じっくり練習<br><small>(時間制限なし・段階練習)</small></label>
                 </div>
                 <div id="countdown-options" class="sub-time-box hidden">
                     <input type="radio" id="cd-1m" name="countdown-val" value="60" onchange="renderRankings()">
@@ -198,24 +200,15 @@
                     <input type="radio" id="focus-balanced" name="focus-type" value="balanced" checked>
                     <label for="focus-balanced">バランスよく</label>
                     <input type="radio" id="focus-parallel" name="focus-type" value="parallel">
-                    <label for="focus-parallel">並列を多め</label>
+                    <label for="focus-parallel">並列回路多め</label>
                     <input type="radio" id="focus-mixed" name="focus-type" value="mixed">
-                    <label for="focus-mixed">混合回路を多め</label>
-                    <input type="radio" id="focus-ohm" name="focus-type" value="ohm">
-                    <label for="focus-ohm">オームの法則多め</label>
-                    <input type="radio" id="focus-resistance" name="focus-type" value="resistance">
-                    <label for="focus-resistance">合成抵抗多め</label>
+                    <label for="focus-mixed">混合回路多め</label>
                 </div>
             </div>
 
-            <div class="setting-group">
-                <label>【5】名前（タイムアタックランキング用）</label>
-                <input id="player-name" class="name-input" type="text" maxlength="12" placeholder="例：2年1組 田中" autocomplete="off">
-                <small style="display:block;margin-top:5px;color:#64748b;">タイムアタック、またはロード・オブ・マスターのカウントダウンランキングで使用します。</small>
-            </div>
             <div class="ranking-panel">
                 <h3 style="margin:0 0 4px;color:var(--primary);">🏆 スコアランキング（上位3人）</h3>
-                <small style="color:#64748b;">上級・鬼・ロード・オブ・マスターを表示します。ロード・オブ・マスターのカウントダウンは、現在選択中の制限時間ごとに集計します。</small>
+                <small style="color:#64748b;">上級・鬼・無双を表示します。無双のカウントダウンは、現在選択中の制限時間ごとに集計します。</small>
                 <div class="ranking-period-tabs">
                     <button type="button" id="period-today" class="active" onclick="setRankingPeriod('today')">今日</button>
                     <button type="button" id="period-week" onclick="setRankingPeriod('week')">今週</button>
@@ -237,6 +230,11 @@
         </div>
         <div class="circuit-view" id="circuit-area"></div>
         <p class="q-text" id="question-text">指示された値を求めなさい。</p>
+        <div id="practice-work-area" class="hidden" style="width:100%;background:#f8fafc;border:1px solid #cbd5e0;border-radius:8px;padding:12px;box-sizing:border-box;margin-bottom:10px;">
+            <div style="font-weight:bold;color:var(--primary);margin-bottom:8px;">段階ごとに回路を整理しよう</div>
+            <div id="practice-step-list"></div>
+            <div id="practice-step-feedback" class="feedback-area" style="margin:8px 0 0;"></div>
+        </div>
         <div class="feedback-area" id="feedback-msg"></div>
         <div class="input-view">
             <div class="input-row">
@@ -270,7 +268,18 @@
         <h2 id="res-title">📊 テスト結果</h2>
         <div class="score-display" id="res-score">目標クリア！</div>
         <div class="time-display" id="res-time">タイム: --:--</div>
+        <div id="rank-entry" class="ranking-panel hidden">
+            <h3 style="margin:0 0 6px;color:var(--primary);">🏆 ランキングに登録</h3>
+            <p style="margin:0 0 8px;font-size:14px;">今回の記録をランキングに載せる場合だけ、名前を入力してください。</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <input id="result-player-name" class="name-input" type="text" maxlength="12" placeholder="例：2年1組 田中" autocomplete="off" style="flex:1;min-width:180px;">
+                <button class="btn" type="button" onclick="registerCurrentRanking()" style="margin:0;font-size:15px;padding:10px 14px;">登録する</button>
+                <button class="btn-reset-top" type="button" onclick="skipRankingRegistration()">登録しない</button>
+            </div>
+            <div id="rank-entry-msg" style="margin-top:7px;font-weight:bold;color:var(--danger);"></div>
+        </div>
         <div id="rank-result" class="ranking-panel hidden"></div>
+        <div id="weakness-analysis" class="ranking-panel hidden"></div>
         <div id="review-section" class="hidden">
             <h3 style="border-left: 5px solid var(--danger); padding-left:10px; margin-top:25px; color: var(--danger);">⚠️ 見直しておきたい問題の解説</h3>
             <p style="font-size:13px; color:#666; margin-top:-5px;">（まちがえた問題／パスした問題／時間切れの問題／やり直して正解した問題）</p>
@@ -295,6 +304,14 @@ const DECIMAL_PARALLELS = [
     {r1:5, r2:5, a:2.5}, {r1:6, r2:9, a:3.6}, {r1:6, r2:18, a:4.5},
     {r1:8, r2:12, a:4.8}, {r1:10, r2:15, a:6.0}, {r1:12, r2:18, a:7.2}
 ];
+
+// 2本の直列枝を並列につないだ回路用（各枝の合計と全体が整数または小数第1位）
+const SERIES_BRANCH_PARALLELS = [
+    {r:[2,4,3,3], a:3}, {r:[3,5,4,4], a:4}, {r:[4,8,6,6], a:6},
+    {r:[5,10,5,10], a:7.5}, {r:[2,8,5,5], a:5}, {r:[3,9,4,8], a:6},
+    {r:[5,7,2,2], a:3}
+];
+
 
 function fmt(n) {
     return Number.isInteger(n) ? String(n) : n.toFixed(1);
@@ -322,9 +339,11 @@ let shownFlags = {};      // その問題を実際に画面に表示したかど
 let totalMistakes = 0;    // 累計ミス回数（ステータスバー表示用）
 let questionElapsedSeconds = 0; // タイムアタック時の1問ごとの経過時間（画面には表示しない）
 let rankingPeriod = 'today';
+let pendingRankingRecord = null;
 let quizAbandoned = false;
 let currentStreak = 0;
 let bestStreak = 0;
+let questionStats = {};
 
 function toggleFullscreen() {
     if (isFullscreenMode) exitFullscreenMode();
@@ -356,12 +375,19 @@ function confirmBackToSetup() {
 }
 
 function toggleOniSettings(isOni) {
-    // 鬼モードでもカウントダウンを選べるようにする。
     document.getElementById('time-rule-group').style.opacity = "1";
     document.getElementById('time-rule-group').style.pointerEvents = "auto";
-    if (isOni) {
+    const isMusou = document.getElementById('diff-superoni').checked;
+    const practice = document.getElementById('time-practice');
+    practice.disabled = isMusou;
+    const practiceLabel = document.querySelector('label[for="time-practice"]');
+    if (practiceLabel) practiceLabel.style.opacity = isMusou ? '0.4' : '1';
+    if (isMusou && practice.checked) {
+        document.getElementById('time-ta').checked = true;
+        toggleTimeDetail(false);
+    } else if (isOni && !practice.checked) {
         document.getElementById('time-cd').checked = true;
-        document.getElementById('cd-7m').checked = true; // 鬼30問・ロード・オブ・マスターの標準：7分
+        document.getElementById('cd-7m').checked = true;
         toggleTimeDetail(true);
     }
 }
@@ -387,13 +413,9 @@ function startQuiz() {
     selectedDiff = document.querySelector('input[name="diff-level"]:checked').value;
     selectedFocus = document.querySelector('input[name="focus-type"]:checked').value;
     timeType = document.querySelector('input[name="time-rule-type"]:checked').value;
-    playerName = document.getElementById('player-name').value.trim();
-    const needsRankingName = timeType === 'ta' || (selectedDiff === 'superoni' && timeType === 'cd');
-    if (needsRankingName && !playerName) {
-        alert('ランキング用の名前を入力してください。');
-        document.getElementById('player-name').focus();
-        return;
-    }
+    if (selectedDiff === 'superoni' && timeType === 'practice') { alert('無双（エンドレス）では、じっくり練習モードは選べません。'); return; }
+    playerName = '';
+    pendingRankingRecord = null;
 
     isEndless = selectedDiff === 'superoni';
     if (selectedDiff === 'easy') { initialTotalQuestions = 5; maxPassCount = 0; }
@@ -403,14 +425,14 @@ function startQuiz() {
     else if (selectedDiff === 'superoni') { initialTotalQuestions = Infinity; maxPassCount = 0; }
 
     usedPassCount = 0; currentCorrectCount = 0; currentIdx = 0;
-    quizAbandoned = false; questionElapsedSeconds = 0; currentStreak = 0; bestStreak = 0;
+    quizAbandoned = false; questionElapsedSeconds = 0; currentStreak = 0; bestStreak = 0; questionStats = {};
     studentAnswers = []; questions = [];
     mistakeCounts = {}; shownFlags = {}; totalMistakes = 0;
     document.getElementById('info-mistakes').innerText = '0';
 
     const firstBatch = isEndless ? 1 : initialTotalQuestions;
     for (let i = 0; i < firstBatch; i++) {
-        questions.push(generateQuestionData(selectedMode, selectedDiff, i));
+        questions.push(generateUniqueQuestion(selectedMode, selectedDiff, i));
     }
 
     updatePassButtonText();
@@ -418,15 +440,20 @@ function startQuiz() {
     if (timeType === 'ta') {
         timerSeconds = 0;
         document.getElementById('timer-label').innerText = "すすんだ時間";
-    } else {
+    } else if (timeType === 'cd') {
         let cdVal = document.querySelector('input[name="countdown-val"]:checked').value;
         timerSeconds = parseInt(cdVal);
         countdownStartSeconds = timerSeconds;
         document.getElementById('timer-label').innerText = "のこり時間";
+    } else {
+        timerSeconds = 0;
+        document.getElementById('timer-label').innerText = "練習時間";
     }
 
     document.getElementById('screen-setup').classList.add('hidden');
     document.getElementById('screen-result').classList.add('hidden');
+    document.getElementById('rank-entry')?.classList.add('hidden');
+    document.getElementById('rank-result')?.classList.add('hidden');
     document.getElementById('screen-test').classList.remove('hidden');
     
     updateTimerDisplay();
@@ -456,94 +483,111 @@ function pickParallel(diff) {
     return list[Math.floor(Math.random() * list.length)];
 }
 
+// 同じ構成・数値の連続を防ぐ。初級・中級は直前1問、それ以外は直前3問を比較する。
+function questionSignature(q) {
+    return [q.type, q.mode, q.target, (q.r || []).join(','), q.hiddenIndex ?? '', fmt(q.ans)].join('|');
+}
+function generateUniqueQuestion(mode, diff, idx) {
+    const lookBack = (diff === 'easy' || diff === 'normal') ? 1 : 3;
+    const recent = questions.slice(-lookBack).map(questionSignature);
+    let candidate;
+    for (let attempt = 0; attempt < 40; attempt++) {
+        candidate = generateQuestionData(mode, diff, idx);
+        if (!recent.includes(questionSignature(candidate))) return candidate;
+    }
+    return candidate;
+}
+
 // 刷新された一元管理問題生成エンジン
 function generateQuestionData(mode, diff, idx) {
-    // 1. 難易度・弱点克服メニュー・問題番号に応じて回路の形状(type)を決定
+    // 1. 難易度・弱点メニューから回路形状を決定
     let type = 's1';
+    const roll = Math.random();
     if (selectedFocus === 'parallel') {
-        type = (Math.random() < 0.7) ? 'p2' : 'm3a';
+        if (diff === 'easy') type = roll < 0.78 ? 'p2' : 's2';
+        else type = roll < 0.45 ? 'p2' : (roll < 0.78 ? 'm3a' : 'm4b');
     } else if (selectedFocus === 'mixed') {
-        type = (Math.random() < 0.55) ? 'm3a' : 'm4a';
+        if (diff === 'easy') type = roll < 0.55 ? 'p2' : 's2';
+        else if (diff === 'normal') type = roll < 0.55 ? 'm3a' : (roll < 0.78 ? 'm4b' : 'p2');
+        else type = roll < 0.38 ? 'm3a' : (roll < 0.72 ? 'm4a' : (roll < 0.90 ? 'm4b' : 'm5a'));
     } else if (diff === 'easy') {
-        let rand = Math.random();
-        type = (rand < 0.3) ? 's1' : ((rand < 0.65) ? 's2' : 'p2');
+        type = roll < 0.30 ? 's1' : (roll < 0.65 ? 's2' : 'p2');
     } else if (diff === 'normal') {
-        type = (idx >= 6) ? 'm3a' : ((Math.random() > 0.5) ? 's2' : 'p2');
+        type = roll < 0.28 ? 's2' : (roll < 0.58 ? 'p2' : (roll < 0.86 ? 'm3a' : 'm4b'));
     } else if (diff === 'hard') {
-        let rand = Math.random();
-        type = (idx >= 10) ? 'm4a' : ((idx >= 5) ? 'm3a' : ((rand > 0.5) ? 's2' : 'p2'));
-    } else if (diff === 'oni' || diff === 'superoni') {
-        type = (Math.random() > 0.5) ? 'm3a' : 'm4a';
+        type = roll < 0.15 ? 's2' : (roll < 0.30 ? 'p2' : (roll < 0.57 ? 'm3a' : (roll < 0.82 ? 'm4a' : 'm4b')));
+    } else if (diff === 'oni') {
+        type = roll < 0.35 ? 'm3a' : (roll < 0.68 ? 'm4a' : (roll < 0.88 ? 'm4b' : 'm5a'));
+    } else if (diff === 'superoni') {
+        type = roll < 0.25 ? 'm3a' : (roll < 0.55 ? 'm4a' : (roll < 0.78 ? 'm4b' : 'm5a'));
     }
 
-    // 2. 抵抗値(r1~r4)と全体の合成抵抗(Rt)
-    let r = [];
-    let Rt = 0;
-    let expRes = "";
-
+    let r = [], Rt = 0, expRes = '';
     if (type === 's1') {
-        let r1 = [2, 3, 4, 5, 6, 8, 10, 12, 15, 20][Math.floor(Math.random() * 10)];
-        r = [r1]; Rt = r1;
-        expRes = `この回路は抵抗が1つだけなので、全体の抵抗はそのまま ${fmt(Rt)} Ω となります。`;
+        const r1 = [2,3,4,5,6,8,10,12,15,20][Math.floor(Math.random()*10)];
+        r=[r1]; Rt=r1;
+        expRes=`この回路は抵抗が1つだけなので、全体の抵抗はそのまま ${fmt(Rt)} Ω となります。`;
     } else if (type === 's2') {
-        let r1 = Math.floor(Math.random() * 12) + 2;
-        let r2 = Math.floor(Math.random() * 12) + 2;
-        r = [r1, r2]; Rt = r1 + r2;
-        expRes = `直列回路の全体の抵抗は、各抵抗の和になります。\n【計算】 ${r1} + ${r2} = ${fmt(Rt)} Ω`;
+        const r1=Math.floor(Math.random()*12)+2, r2=Math.floor(Math.random()*12)+2;
+        r=[r1,r2]; Rt=r1+r2;
+        expRes=`直列回路の全体の抵抗は、各抵抗の和になります。\n【計算】 ${r1} + ${r2} = ${fmt(Rt)} Ω`;
     } else if (type === 'p2') {
-        let p = pickParallel(diff);
-        r = [p.r1, p.r2]; Rt = p.a;
-        expRes = `並列回路の全体の抵抗は、「和分の積（足した数 分の かけた数）」で求められます。\n【計算】 (${p.r1} × ${p.r2}) ÷ (${p.r1} + ${p.r2}) = ${p.r1*p.r2} ÷ ${p.r1+p.r2} = ${fmt(Rt)} Ω`;
+        const p=pickParallel(diff); r=[p.r1,p.r2]; Rt=p.a;
+        expRes=`並列回路の全体の抵抗は、「和分の積」で求められます。\n【計算】 (${p.r1} × ${p.r2}) ÷ (${p.r1} + ${p.r2}) = ${fmt(Rt)} Ω`;
     } else if (type === 'm3a') {
-        let p = pickParallel(diff);
-        let r1 = Math.floor(Math.random() * 10) + 2;
-        r = [r1, p.r1, p.r2]; Rt = Math.round((r1 + p.a) * 10) / 10;
-        expRes = `まず並列部分（${p.r1} Ω と ${p.r2} Ω）の合成抵抗を求めると ${fmt(p.a)} Ω になります。\nこれが手前の ${r1} Ω の抵抗と直列につながっているため、これらを足し合わせます。\n【計算】 ${r1} + ${fmt(p.a)} = ${fmt(Rt)} Ω`;
+        const p=pickParallel(diff), r1=Math.floor(Math.random()*10)+2;
+        r=[r1,p.r1,p.r2]; Rt=Math.round((r1+p.a)*10)/10;
+        expRes=`まず並列部分（${p.r1} Ω と ${p.r2} Ω）の合成抵抗を求めると ${fmt(p.a)} Ω です。\nそれが ${r1} Ω と直列なので足します。\n【計算】 ${r1} + ${fmt(p.a)} = ${fmt(Rt)} Ω`;
     } else if (type === 'm4a') {
-        let p1 = pickParallel(diff);
-        let p2 = pickParallel(diff);
-        if (p1.r1 === p2.r1 && p1.r2 === p2.r2) p2 = PERFECT_PARALLELS[Math.floor(Math.random() * PERFECT_PARALLELS.length)];
-        r = [p1.r1, p1.r2, p2.r1, p2.r2];
-        Rt = Math.round((p1.a + p2.a) * 10) / 10;
-        expRes = `複雑な混合回路ですが、2つの並列ブロックに分けて考えます。\n・左側の並列部分（${p1.r1} Ω と ${p1.r2} Ω）の合成抵抗は ${fmt(p1.a)} Ω\n・右側の並列部分（${p2.r1} Ω と ${p2.r2} Ω）の合成抵抗は ${fmt(p2.a)} Ω\nこの2つのブロックが直列につながっているため、最後に足し合わせます。\n【計算】 ${fmt(p1.a)} + ${fmt(p2.a)} = ${fmt(Rt)} Ω`;
+        const p1=pickParallel(diff), p2=pickParallel(diff);
+        r=[p1.r1,p1.r2,p2.r1,p2.r2]; Rt=Math.round((p1.a+p2.a)*10)/10;
+        expRes=`2つの並列ブロックに分けます。\n・左：${fmt(p1.a)} Ω\n・右：${fmt(p2.a)} Ω\nこの2ブロックは直列です。\n【計算】 ${fmt(p1.a)} + ${fmt(p2.a)} = ${fmt(Rt)} Ω`;
+    } else if (type === 'm4b') {
+        const d=SERIES_BRANCH_PARALLELS[Math.floor(Math.random()*SERIES_BRANCH_PARALLELS.length)];
+        r=d.r.slice(); const upper=r[0]+r[1], lower=r[2]+r[3]; Rt=Math.round(d.a*10)/10;
+        expRes=`まず、上の枝と下の枝をそれぞれ直列合成します。\n・上の枝：${r[0]} + ${r[1]} = ${fmt(upper)} Ω\n・下の枝：${r[2]} + ${r[3]} = ${fmt(lower)} Ω\n次に、この2本の枝を並列合成します。\n【計算】 (${fmt(upper)} × ${fmt(lower)}) ÷ (${fmt(upper)} + ${fmt(lower)}) = ${fmt(Rt)} Ω`;
+    } else if (type === 'm5a') {
+        const p1=pickParallel(diff), p2=pickParallel(diff), rs=[2,3,4,5,6,8][Math.floor(Math.random()*6)];
+        r=[rs,p1.r1,p1.r2,p2.r1,p2.r2]; Rt=Math.round((rs+p1.a+p2.a)*10)/10;
+        expRes=`5個の抵抗を3ブロックに分けます。\n・単独の直列抵抗：${rs} Ω\n・中央の並列部分：${fmt(p1.a)} Ω\n・右の並列部分：${fmt(p2.a)} Ω\n【計算】 ${rs} + ${fmt(p1.a)} + ${fmt(p2.a)} = ${fmt(Rt)} Ω`;
     }
 
-    // 3. 全体の電流(I)と電源電圧(V)
-    let I = [1, 2, 3, 4][Math.floor(Math.random() * 4)];
-    let V = Math.round(I * Rt * 10) / 10;
+    const I=[1,2,3,4][Math.floor(Math.random()*4)];
+    const V=Math.round(I*Rt*10)/10;
+    let qMode=mode;
+    if (mode==='random') qMode=Math.random()<0.5?'resistance':'triathlon';
 
-    // 4. 出題モード
-    let qMode = mode;
-    if (selectedFocus === 'ohm') qMode = (Math.random() < 0.8) ? 'triathlon' : 'resistance';
-    else if (selectedFocus === 'resistance') qMode = (Math.random() < 0.8) ? 'resistance' : 'triathlon';
-    else if (mode === 'random') qMode = (Math.random() > 0.5) ? 'resistance' : 'triathlon';
-
-    if (qMode === 'resistance') {
+    // 混合回路では、一定割合で「未知の1抵抗」を逆算する問題を出す
+    const canMissing=['m3a','m4a','m4b'].includes(type) && diff!=='easy';
+    const missingChance = timeType === 'practice' ? 0 : (selectedFocus==='mixed' ? 0.28 : (diff==='normal'?0.08:0.16));
+    if (canMissing && qMode!=='resistance' && Math.random()<missingChance) {
+        const hiddenIndex=Math.floor(Math.random()*r.length);
         return {
-            mode: 'res', type: type, r: r, Rt: Rt, I: I, V: V, target: 'Rt', ans: Rt,
-            qText: "この回路全体の「全体の抵抗（合成抵抗）」を求めなさい。",
-            unit: "Ω", category: type,
-            exp: `【解説】\n${expRes}`
-        };
-    } else {
-        let target = ['I', 'V', 'R'][Math.floor(Math.random() * 3)];
-        let qText = ""; let unit = ""; let ans = 0; let exp = "";
-
-        if (target === 'I') {
-            qText = "回路全体を流れる電流 I を求めなさい。"; unit = "A"; ans = I;
-            exp = `【解説】\nオームの法則「全体の電流(A) ＝ 全体の電圧(V) ÷ 全体の抵抗(Ω)」を使います。\n\n① まず、回路図から全体の抵抗（合成抵抗）を計算します。\n${expRes}\n\n② 全体の抵抗が ${fmt(Rt)} Ω とわかったので、電源の全体電圧 ${fmt(V)} V をこれで割ります。\n【計算】 ${fmt(V)} V ÷ ${fmt(Rt)} Ω = ${fmt(ans)} A`;
-        } else if (target === 'V') {
-            qText = "電源の電圧 V を求めなさい。"; unit = "V"; ans = V;
-            exp = `【解説】\nオームの法則「全体の電圧(V) ＝ 全体の電流(A) × 全体の抵抗(Ω)」を使います。\n\n① まず、回路図から全体の抵抗（合成抵抗）を計算します。\n${expRes}\n\n② 全体の抵抗が ${fmt(Rt)} Ω とわかったので、全体の電流 ${fmt(I)} A をかけます。\n【計算】 ${fmt(I)} A × ${fmt(Rt)} Ω = ${fmt(ans)} V`;
-        } else {
-            qText = "回路全体の合成抵抗 R を求めなさい。\n(※この問題ではオームの法則の練習のため、個別の抵抗値が隠されています)"; unit = "Ω"; ans = Rt;
-            exp = `【解説】\nオームの法則「全体の抵抗(Ω) ＝ 全体の電圧(V) ÷ 全体の電流(A)」を使います。\n\n回路図に示されている全体の電圧（電源電圧） ${fmt(V)} V と、全体を流れる電流 ${fmt(I)} A から直接求めることができます。\n【計算】 ${fmt(V)} V ÷ ${fmt(I)} A = ${fmt(ans)} Ω\n\n(参考：隠されていた個々の抵抗値の合成プロセスは以下の通りです)\n${expRes}`;
-        }
-
-        return {
-            mode: 'tri', type: type, r: r, Rt: Rt, I: I, V: V, target: target, ans: ans, qText: qText, unit: unit, category: target, exp: exp
+            mode:'missing', type, r, Rt, I, V, target:'Rx', hiddenIndex, ans:r[hiddenIndex], unit:'Ω', category:'missing',
+            qText:`回路全体の合成抵抗は ${fmt(Rt)} Ω です。\n「？」で隠された抵抗の値を求めなさい。`,
+            exp:`【解説】\nまず、わかっている部分から順に合成し、全体の ${fmt(Rt)} Ω から逆算します。\n\n${expRes}\n\n元の回路を満たす「？」の抵抗は ${fmt(r[hiddenIndex])} Ω です。`
         };
     }
+
+    if (qMode==='resistance') {
+        return {mode:'res',type,r,Rt,I,V,target:'Rt',ans:Rt,qText:'この回路全体の「全体の抵抗（合成抵抗）」を求めなさい。',unit:'Ω',category:type,exp:`【解説】\n${expRes}`};
+    }
+
+    // オームの法則から合成抵抗を直接求める問題は10%に抑える
+    const tr=Math.random();
+    const target=tr<0.45?'I':(tr<0.90?'V':'R');
+    let qText='',unit='',ans=0,exp='';
+    if(target==='I'){
+        qText='回路全体を流れる電流 I を求めなさい。'; unit='A'; ans=I;
+        exp=`【解説】\nまず合成抵抗を求めます。\n${expRes}\n\n次に、電流＝電圧÷抵抗です。\n【計算】 ${fmt(V)} ÷ ${fmt(Rt)} = ${fmt(ans)} A`;
+    }else if(target==='V'){
+        qText='電源の電圧 V を求めなさい。'; unit='V'; ans=V;
+        exp=`【解説】\nまず合成抵抗を求めます。\n${expRes}\n\n次に、電圧＝電流×抵抗です。\n【計算】 ${fmt(I)} × ${fmt(Rt)} = ${fmt(ans)} V`;
+    }else{
+        qText='回路全体の合成抵抗 R を、電圧と電流から求めなさい。'; unit='Ω'; ans=Rt;
+        exp=`【解説】\n抵抗＝電圧÷電流です。\n【計算】 ${fmt(V)} ÷ ${fmt(I)} = ${fmt(ans)} Ω`;
+    }
+    return {mode:'tri',type,r,Rt,I,V,target,ans,qText,unit,category:target,exp};
 }
 
 function showQuestion() {
@@ -553,6 +597,9 @@ function showQuestion() {
     let q = questions[currentIdx];
     document.getElementById('question-text').innerText = q.qText;
     document.getElementById('unit-display').innerText = " " + q.unit;
+    const practiceArea = document.getElementById('practice-work-area');
+    practiceArea.classList.toggle('hidden', timeType !== 'practice');
+    if (timeType === 'practice') setupPracticeSteps(q);
     
     let fb = document.getElementById('feedback-msg');
     fb.innerText = ""; fb.className = "feedback-area";
@@ -560,7 +607,126 @@ function showQuestion() {
     document.getElementById('circuit-area').innerHTML = drawSVG(q);
     
     let inputEl = document.getElementById('student-ans');
-    inputEl.value = ''; inputEl.focus();
+    inputEl.value = '';
+    inputEl.disabled = false;
+    const submitBtn = document.querySelector('.btn-submit');
+    submitBtn.disabled = false; submitBtn.style.opacity = '1'; inputEl.style.opacity = '1';
+    if (timeType !== 'practice' || practiceSteps.length === 0) inputEl.focus();
+}
+
+let practiceSteps = [];
+let currentPracticeStep = 0;
+
+function parallelValue(a, b) {
+    return Math.round(((a * b) / (a + b)) * 10) / 10;
+}
+
+function buildPracticeSteps(q) {
+    const steps = [];
+    const add = (label, answer, unit='Ω') => steps.push({label, answer:Math.round(answer*10)/10, unit});
+
+    if (q.type === 's2') {
+        add(`2つの抵抗 ${fmt(q.r[0])} Ω と ${fmt(q.r[1])} Ω を直列合成すると？`, q.Rt);
+    } else if (q.type === 'p2') {
+        add(`2つの抵抗 ${fmt(q.r[0])} Ω と ${fmt(q.r[1])} Ω を並列合成すると？`, q.Rt);
+    } else if (q.type === 'm3a') {
+        const p = parallelValue(q.r[1], q.r[2]);
+        add(`並列部分（${fmt(q.r[1])} Ω と ${fmt(q.r[2])} Ω）の合成抵抗は？`, p);
+        add(`その値と ${fmt(q.r[0])} Ω を直列合成した、回路全体の合成抵抗は？`, q.Rt);
+    } else if (q.type === 'm4a') {
+        const left = parallelValue(q.r[0], q.r[1]);
+        const right = parallelValue(q.r[2], q.r[3]);
+        add(`左の並列部分（${fmt(q.r[0])} Ω と ${fmt(q.r[1])} Ω）の合成抵抗は？`, left);
+        add(`右の並列部分（${fmt(q.r[2])} Ω と ${fmt(q.r[3])} Ω）の合成抵抗は？`, right);
+        add(`左右の合成抵抗を直列につないだ、回路全体の合成抵抗は？`, q.Rt);
+    } else if (q.type === 'm4b') {
+        const upper = q.r[0] + q.r[1];
+        const lower = q.r[2] + q.r[3];
+        add(`上の枝（${fmt(q.r[0])} Ω と ${fmt(q.r[1])} Ω）を直列合成すると？`, upper);
+        add(`下の枝（${fmt(q.r[2])} Ω と ${fmt(q.r[3])} Ω）を直列合成すると？`, lower);
+        add(`上の枝と下の枝を並列合成した、回路全体の合成抵抗は？`, q.Rt);
+    } else if (q.type === 'm5a') {
+        const middle = parallelValue(q.r[1], q.r[2]);
+        const right = parallelValue(q.r[3], q.r[4]);
+        add(`中央の並列部分（${fmt(q.r[1])} Ω と ${fmt(q.r[2])} Ω）の合成抵抗は？`, middle);
+        add(`右の並列部分（${fmt(q.r[3])} Ω と ${fmt(q.r[4])} Ω）の合成抵抗は？`, right);
+        add(`単独の ${fmt(q.r[0])} Ω と2つの合成抵抗を直列合成すると？`, q.Rt);
+    }
+
+    if (q.target === 'I') add(`合成抵抗 ${fmt(q.Rt)} Ω と電圧 ${fmt(q.V)} V から、電流 I は？`, q.I, 'A');
+    else if (q.target === 'V') add(`合成抵抗 ${fmt(q.Rt)} Ω と電流 ${fmt(q.I)} A から、電源電圧 V は？`, q.V, 'V');
+
+    return steps;
+}
+
+function setupPracticeSteps(q) {
+    practiceSteps = buildPracticeSteps(q);
+    currentPracticeStep = 0;
+    renderPracticeSteps();
+}
+
+function renderPracticeSteps() {
+    const list = document.getElementById('practice-step-list');
+    const feedback = document.getElementById('practice-step-feedback');
+    feedback.innerText = '';
+    feedback.className = 'feedback-area';
+
+    if (!practiceSteps.length) {
+        list.innerHTML = '<div style="padding:8px;background:white;border-radius:6px;">この問題は途中の合成がありません。下の解答欄に答えを入力しましょう。</div>';
+        return;
+    }
+
+    list.innerHTML = practiceSteps.map((step, i) => {
+        const done = i < currentPracticeStep;
+        const active = i === currentPracticeStep;
+        const locked = i > currentPracticeStep;
+        return `<div style="margin:8px 0;padding:10px;background:${done?'#ecfdf5':'white'};border:1px solid ${active?'#2980b9':'#cbd5e0'};border-radius:7px;opacity:${locked?'0.55':'1'};">
+            <div style="font-weight:bold;margin-bottom:6px;">${done?'✅ ':active?'▶ ':''}段階 ${i+1}：${step.label}</div>
+            ${done ? `<div style="color:#15803d;font-weight:bold;">${fmt(step.answer)} ${step.unit}</div>` : active ? `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><input id="practice-step-input" type="number" step="0.1" inputmode="decimal" class="ans-input" style="font-size:22px;width:120px;padding:5px;" onkeydown="if(event.key==='Enter')checkPracticeStep()"><span style="font-weight:bold;">${step.unit}</span><button type="button" class="btn" style="font-size:14px;padding:8px 12px;margin:0;" onclick="checkPracticeStep()">この段階を確認</button></div>` : '<div>前の段階を正解すると入力できます。</div>'}
+        </div>`;
+    }).join('');
+
+    const finalInput = document.getElementById('student-ans');
+    const submitBtn = document.querySelector('.btn-submit');
+    const completed = currentPracticeStep >= practiceSteps.length;
+    finalInput.disabled = !completed;
+    submitBtn.disabled = !completed;
+    finalInput.style.opacity = completed ? '1' : '0.45';
+    submitBtn.style.opacity = completed ? '1' : '0.45';
+    if (completed) {
+        feedback.innerText = '段階計算が完了しました。最後に、下の解答欄へ答えを入力してください。';
+        finalInput.focus();
+    } else {
+        setTimeout(() => document.getElementById('practice-step-input')?.focus(), 0);
+    }
+}
+
+function checkPracticeStep() {
+    if (currentPracticeStep >= practiceSteps.length) return;
+    const input = document.getElementById('practice-step-input');
+    const feedback = document.getElementById('practice-step-feedback');
+    const value = parseFloat(input?.value);
+    if (Number.isNaN(value)) {
+        feedback.innerText = '数値を入力してください。';
+        feedback.className = 'feedback-area feedback-wrong';
+        return;
+    }
+    const step = practiceSteps[currentPracticeStep];
+    if (Math.abs(value - step.answer) < 0.01) {
+        currentPracticeStep++;
+        renderPracticeSteps();
+    } else {
+        feedback.innerText = 'この段階の計算が違います。回路のつながり方をもう一度確認しましょう。';
+        feedback.className = 'feedback-area feedback-wrong';
+        input.select();
+    }
+}
+
+function recordQuestionStat(q, correct, mistakeAdded = false) {
+    const key = q.category || q.type || 'other';
+    if (!questionStats[key]) questionStats[key] = {shown:0, correct:0, mistakes:0};
+    if (correct) questionStats[key].correct++;
+    if (mistakeAdded) questionStats[key].mistakes++;
 }
 
 function submitAnswer() {
@@ -578,6 +744,7 @@ function submitAnswer() {
     // 丸め誤差を考慮した厳密な判定
     if (Math.abs(val - q.ans) < 0.01) {
         studentAnswers[currentIdx] = 'correct';
+        recordQuestionStat(q, true, false);
         currentCorrectCount++;
         if (isEndless) {
             currentStreak++;
@@ -585,7 +752,7 @@ function submitAnswer() {
         }
         currentIdx++;
         if (isEndless) {
-            questions.push(generateQuestionData(selectedMode, 'superoni', questions.length));
+            questions.push(generateUniqueQuestion(selectedMode, 'superoni', questions.length));
             showQuestion();
         } else if (currentCorrectCount < initialTotalQuestions) {
             showQuestion();
@@ -596,16 +763,15 @@ function submitAnswer() {
         // ★この問題で間違えたことを記録（タイムアタックでやり直して最終的に正解しても、
         //   一度つまずいたという事実は結果画面の解説に残す）
         mistakeCounts[currentIdx] = (mistakeCounts[currentIdx] || 0) + 1;
+        recordQuestionStat(q, false, true);
         totalMistakes++;
         document.getElementById('info-mistakes').innerText = totalMistakes;
 
-        if (selectedDiff === 'superoni' && timeType === 'cd') currentStreak = 0;
-
-        if (selectedDiff === 'oni' || (selectedDiff === 'superoni' && timeType === 'ta')) {
+        if (selectedDiff === 'oni' || selectedDiff === 'superoni') {
             clearInterval(timerId);
             studentAnswers[currentIdx] = 'miss_dead';
             const msg = selectedDiff === 'superoni'
-                ? `ロード・オブ・マスター タイムアタック：${currentCorrectCount}問連続正解で終了！`
+                ? `無双：${currentCorrectCount}問連続正解で終了！`
                 : "鬼モード：1回ミスしたため終了！";
             endQuiz(false, msg);
             return;
@@ -629,7 +795,7 @@ function passQuestion() {
     if(selectedDiff === 'oni' || selectedDiff === 'superoni' || usedPassCount >= maxPassCount) return;
     usedPassCount++;
     studentAnswers[currentIdx] = 'passed'; 
-    questions.push(generateQuestionData(selectedMode, selectedDiff, questions.length));
+    questions.push(generateUniqueQuestion(selectedMode, selectedDiff, questions.length));
     currentIdx++;
     updatePassButtonText();
     showQuestion();
@@ -645,14 +811,16 @@ function handleTimer() {
             endQuiz(false, 'そこまで！この問題の制限時間1分を超えました。', { skipRanking: true });
             return;
         }
-    } else {
+    } else if (timeType === 'cd') {
         timerSeconds--;
         if (timerSeconds <= 0) {
             timerSeconds = 0; clearInterval(timerId);
-            if (isEndless) endQuiz(true, `ロード・オブ・マスター カウントダウン：合計${currentCorrectCount}問正解・最大${bestStreak}問連続正解！`);
+            if (isEndless) endQuiz(true, `無双 カウントダウン：合計${currentCorrectCount}問正解・最大${bestStreak}問連続正解！`);
             else endQuiz(false, "タイムアップ！時間切れです。");
             return;
         }
+    } else {
+        timerSeconds++;
     }
     updateTimerDisplay();
 }
@@ -673,7 +841,7 @@ function endQuiz(isSuccess, message = "", options = {}) {
     let timeEl = document.getElementById('res-time');
     
     if (isEndless) {
-        titleEl.innerText = timeType === 'ta' ? "👹 ロード・オブ・マスター タイムアタック終了" : "👹 ロード・オブ・マスター カウントダウン終了";
+        titleEl.innerText = timeType === 'ta' ? "👹 無双 タイムアタック終了" : "👹 無双 カウントダウン終了";
         scoreEl.innerText = message || `${currentCorrectCount}問正解しました。`;
         scoreEl.style.color = "#6b21a8";
     } else if(isSuccess) {
@@ -688,13 +856,16 @@ function endQuiz(isSuccess, message = "", options = {}) {
 
     if (timeType === 'ta') {
         timeEl.innerText = `かかった時間: ${Math.floor(timerSeconds/60)}分 ${timerSeconds%60}秒 ／ パス使用: ${usedPassCount}回 ／ 累計ミス: ${totalMistakes}回`;
-    } else {
+    } else if (timeType === 'cd') {
         let baseTime = countdownStartSeconds || parseInt(document.querySelector('input[name="countdown-val"]:checked').value);
         let used = baseTime - timerSeconds;
         timeEl.innerText = `消費時間: ${Math.floor(used/60)}分 ${used%60}秒 (のこり ${Math.floor(timerSeconds/60)}分 ${timerSeconds%60}秒) ／ 累計ミス: ${totalMistakes}回`;
+    } else {
+        timeEl.innerText = `じっくり練習時間: ${Math.floor(timerSeconds/60)}分 ${timerSeconds%60}秒 ／ 累計ミス: ${totalMistakes}回`;
     }
 
-    if (!options.skipRanking && !quizAbandoned) updateRankingAfterQuiz(isSuccess);
+    if (!options.skipRanking && !quizAbandoned && timeType !== 'practice') prepareRankingRegistration(isSuccess);
+    renderWeaknessAnalysis();
 
     // ★見直し対象の判定を拡張：
     //  ・パスした問題
@@ -757,7 +928,31 @@ function endQuiz(isSuccess, message = "", options = {}) {
 
 
 const RANKING_KEY = 'electricCurrentMasterRankingsV4';
-const DIFF_LABELS = {hard:'上級', oni:'鬼', superoni:'ロード・オブ・マスター'};
+function renderWeaknessAnalysis() {
+    const box = document.getElementById('weakness-analysis');
+    if (!['easy','normal','hard'].includes(selectedDiff)) { box.classList.add('hidden'); return; }
+    const groups = [
+        {name:'直列回路', keys:['s1','s2']},
+        {name:'並列回路', keys:['p2']},
+        {name:'混合回路', keys:['m3a','m4a','m4b','m5a']},
+        {name:'オームの法則', keys:['I','V','R']},
+        {name:'未知の抵抗', keys:['missing']}
+    ];
+    const rows = groups.map(g => {
+        let correct=0, mistakes=0;
+        g.keys.forEach(k=>{ const st=questionStats[k]; if(st){correct+=st.correct; mistakes+=st.mistakes;} });
+        const attempts=correct+mistakes;
+        if(!attempts) return '';
+        const rate=Math.round(correct/attempts*100);
+        const judge=rate>=85?'よくできています':rate>=70?'おおむねできています':'もう一度練習しよう';
+        return `<tr><td>${g.name}</td><td>${rate}%</td><td>${judge}</td></tr>`;
+    }).join('');
+    if(!rows){ box.classList.add('hidden'); return; }
+    box.innerHTML=`<h3 style="margin:0 0 8px;color:var(--primary);">📊 弱点分析</h3><table style="width:100%;border-collapse:collapse;"><tr><th style="text-align:left;border-bottom:1px solid #cbd5e0;">分野</th><th style="border-bottom:1px solid #cbd5e0;">正答率</th><th style="border-bottom:1px solid #cbd5e0;">判定</th></tr>${rows}</table><p style="font-size:13px;color:#64748b;">誤答した回数も含めて算出しています。次回の弱点克服メニュー選択の参考にしてください。</p>`;
+    box.classList.remove('hidden');
+}
+
+const DIFF_LABELS = {hard:'上級', oni:'鬼', superoni:'無双'};
 
 function loadRankings() {
     try {
@@ -826,8 +1021,8 @@ function getCategoryInfo() {
     return [
         {key:'hard-ta', title:'上級・タイムアタック', scoreType:'time'},
         {key:'oni-ta', title:'鬼・タイムアタック', scoreType:'time'},
-        {key:'superoni-ta', title:'ロード・オブ・マスター・タイムアタック', scoreType:'score'},
-        {key:`superoni-cd-${cd}`, title:`ロード・オブ・マスター・カウントダウン（${Math.floor(cd/60)}分）`, scoreType:'score'}
+        {key:'superoni-ta', title:'無双・タイムアタック', scoreType:'score'},
+        {key:`superoni-cd-${cd}`, title:`無双・カウントダウン（${Math.floor(cd/60)}分）`, scoreType:'score'}
     ];
 }
 
@@ -856,48 +1051,67 @@ function renderRankings() {
     }).join('');
 }
 
-function updateRankingAfterQuiz(isSuccess) {
-    const box = document.getElementById('rank-result');
-    box.classList.add('hidden');
-    box.innerHTML = '';
-    if (selectedDiff === 'review') return;
-
+function buildEligibleRankingRecord(isSuccess) {
+    if (selectedDiff === 'review') return null;
     const eligibleTA = timeType === 'ta' && ['hard','oni','superoni'].includes(selectedDiff);
     const eligibleLordCD = timeType === 'cd' && selectedDiff === 'superoni';
-    if (!eligibleTA && !eligibleLordCD) return;
-    if (selectedDiff !== 'superoni' && !isSuccess) return;
-
-    const record = {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        name: playerName || '名前なし',
-        time: timeType === 'ta' ? timerSeconds : (countdownStartSeconds - timerSeconds),
-        score: (selectedDiff === 'superoni' && timeType === 'cd') ? bestStreak : currentCorrectCount,
-        totalCorrect: currentCorrectCount,
-        diff: selectedDiff,
-        timeType,
-        duration: timeType === 'cd' ? countdownStartSeconds : null,
-        mode: selectedMode,
-        savedAt: Date.now()
+    if (!eligibleTA && !eligibleLordCD) return null;
+    if (selectedDiff !== 'superoni' && !isSuccess) return null;
+    // 無双は1ミス終了。タイム切れまたはミスまでの連続正解数を記録。
+    return {
+        id:`${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        name:'',
+        time:timeType==='ta'?timerSeconds:(countdownStartSeconds-timerSeconds),
+        score:selectedDiff==='superoni'?currentCorrectCount:currentCorrectCount,
+        totalCorrect:currentCorrectCount,
+        diff:selectedDiff,timeType,
+        duration:timeType==='cd'?countdownStartSeconds:null,
+        mode:selectedMode,savedAt:Date.now()
     };
+}
 
-    const records = loadRankings();
-    records.push(record);
-    saveRankings(records);
-    renderRankings();
+function prepareRankingRegistration(isSuccess) {
+    pendingRankingRecord=buildEligibleRankingRecord(isSuccess);
+    const entry=document.getElementById('rank-entry');
+    const result=document.getElementById('rank-result');
+    entry.classList.add('hidden'); result.classList.add('hidden');
+    result.innerHTML='';
+    if(!pendingRankingRecord) return;
+    document.getElementById('result-player-name').value='';
+    document.getElementById('rank-entry-msg').innerText='';
+    entry.classList.remove('hidden');
+}
 
-    const catKey = rankingCategory(record);
-    const scoreType = (selectedDiff === 'hard' || selectedDiff === 'oni') ? 'time' : 'score';
-    const periodLabels = {today:'今日', week:'今週', all:'歴代'};
-    const sections = ['today','week','all'].map(period => {
-        const rows = sortCategory(filterByPeriod(records, period).filter(r => rankingCategory(r) === catKey), scoreType);
-        const rank = rows.findIndex(r => r.id === record.id) + 1;
-        const top = rows.slice(0,3).map((r,i) => `<li>${i+1}位　${formatRankRecord(r, scoreType)}</li>`).join('') || '<li>記録なし</li>';
-        const mine = rank > 0 ? `<div class="my-rank">あなた：${rank}位　${formatRankRecord(record, scoreType)}</div>` : '';
+function registerCurrentRanking() {
+    if(!pendingRankingRecord) return;
+    const input=document.getElementById('result-player-name');
+    const name=input.value.trim();
+    if(!name){
+        document.getElementById('rank-entry-msg').innerText='名前を入力してください。';
+        input.focus(); return;
+    }
+    pendingRankingRecord.name=name;
+    const record=pendingRankingRecord;
+    const records=loadRankings(); records.push(record); saveRankings(records); renderRankings();
+    const catKey=rankingCategory(record);
+    const scoreType=(record.diff==='hard'||record.diff==='oni')?'time':'score';
+    const periodLabels={today:'今日',week:'今週',all:'歴代'};
+    const sections=['today','week','all'].map(period=>{
+        const rows=sortCategory(filterByPeriod(records,period).filter(r=>rankingCategory(r)===catKey),scoreType);
+        const rank=rows.findIndex(r=>r.id===record.id)+1;
+        const top=rows.slice(0,3).map((r,i)=>`<li>${i+1}位　${formatRankRecord(r,scoreType)}</li>`).join('')||'<li>記録なし</li>';
+        const mine=rank>0?`<div class="my-rank">あなた：${rank}位　${formatRankRecord(record,scoreType)}</div>`:'';
         return `<div style="margin-top:10px;"><b>${periodLabels[period]}のランキング</b><ol style="line-height:1.8;">${top}</ol>${mine}</div>`;
     }).join('');
+    document.getElementById('rank-entry').classList.add('hidden');
+    const box=document.getElementById('rank-result'); box.classList.remove('hidden');
+    box.innerHTML=`<h3 style="margin:0;color:var(--primary);">🏆 今回のランキング</h3>${sections}`;
+    pendingRankingRecord=null;
+}
 
-    box.classList.remove('hidden');
-    box.innerHTML = `<h3 style="margin:0;color:var(--primary);">🏆 今回のランキング</h3>${sections}`;
+function skipRankingRegistration(){
+    pendingRankingRecord=null;
+    document.getElementById('rank-entry').classList.add('hidden');
 }
 
 function clearRankings() {
@@ -908,7 +1122,6 @@ function clearRankings() {
 
 window.addEventListener('DOMContentLoaded', () => {
     setRankingPeriod('today');
-    document.getElementById('player-name')?.addEventListener('input', renderRankings);
 });
 
 // 見直し専用の再挑戦セッション（パスなし・タイムアタック・鬼判定なしの練習モード）
@@ -921,7 +1134,7 @@ function startReviewSession(missedList) {
     currentCorrectCount = 0; currentIdx = 0;
     usedPassCount = 0; maxPassCount = 0;
     selectedDiff = 'review'; isEndless = false;
-    quizAbandoned = false; questionElapsedSeconds = 0; currentStreak = 0; bestStreak = 0; // 鬼モードの即終了判定などを無効化するため
+    quizAbandoned = false; questionElapsedSeconds = 0; currentStreak = 0; bestStreak = 0; questionStats = {}; // 鬼モードの即終了判定などを無効化するため
     timeType = 'ta'; timerSeconds = 0;
 
     document.getElementById('timer-label').innerText = "すすんだ時間";
@@ -949,26 +1162,32 @@ function backToSetup() {
 function drawSVG(q, isReview = false) {
     let type = q.type;
     
-    let r1 = "?? Ω", r2 = "?? Ω", r3 = "?? Ω", r4 = "?? Ω";
+    let r1 = "?? Ω", r2 = "?? Ω", r3 = "?? Ω", r4 = "?? Ω", r5 = "?? Ω";
     let vStr = "電源";
     let iStr = "";
 
     // 抵抗値の表示・非表示の制御
-    if (q.mode === 'res' || (q.mode === 'tri' && q.target !== 'R') || isReview) {
-        r1 = q.r[0] ? fmt(q.r[0]) + "Ω" : "";
-        r2 = q.r[1] ? fmt(q.r[1]) + "Ω" : "";
-        r3 = q.r[2] ? fmt(q.r[2]) + "Ω" : "";
-        r4 = q.r[3] ? fmt(q.r[3]) + "Ω" : "";
+    if (q.mode === 'res' || q.mode === 'missing' || (q.mode === 'tri' && q.target !== 'R') || isReview) {
+        r1 = q.r[0] !== undefined ? fmt(q.r[0]) + "Ω" : "";
+        r2 = q.r[1] !== undefined ? fmt(q.r[1]) + "Ω" : "";
+        r3 = q.r[2] !== undefined ? fmt(q.r[2]) + "Ω" : "";
+        r4 = q.r[3] !== undefined ? fmt(q.r[3]) + "Ω" : "";
+        r5 = q.r[4] !== undefined ? fmt(q.r[4]) + "Ω" : "";
+        if (q.mode === 'missing' && !isReview) {
+            const labels = [r1,r2,r3,r4,r5]; labels[q.hiddenIndex] = "？ Ω";
+            [r1,r2,r3,r4,r5] = labels;
+        }
     } else {
         // オームの法則で全体抵抗 R を求める問題かつ演習中の場合のみ、ヒントにならないよう個別の値を隠す
         r1 = "?? Ω";
         r2 = q.r[1] ? "?? Ω" : "";
         r3 = q.r[2] ? "?? Ω" : "";
-        r4 = q.r[3] ? "?? Ω" : "";
+        r4 = q.r[3] !== undefined ? "?? Ω" : "";
+        r5 = q.r[4] !== undefined ? "?? Ω" : "";
     }
 
     // 電圧・電流の表示制御
-    if (q.mode === 'res') {
+    if (q.mode === 'res' || q.mode === 'missing') {
         vStr = "電源";
         iStr = ""; 
     } else {
@@ -993,6 +1212,9 @@ function drawSVG(q, isReview = false) {
     inner += `<text x="30" y="99" font-size="11" font-weight="bold" text-anchor="middle">A</text>`;
     if (iStr) {
         inner += `<text x="55" y="100" font-size="11" font-weight="bold">${iStr}</text>`;
+    }
+    if (q.mode === 'missing' && !isReview) {
+        inner += `<text x="160" y="112" font-size="12" font-weight="bold" text-anchor="middle">全体の合成抵抗：${fmt(q.Rt)} Ω</text>`;
     }
 
     // 回路タイプごとの中身分岐
@@ -1041,6 +1263,26 @@ function drawSVG(q, isReview = false) {
         inner += `<line x1="237" y1="75" x2="260" y2="75" stroke="black" stroke-width="2"/>`;
         inner += `<line x1="260" y1="25" x2="260" y2="75" stroke="black" stroke-width="2"/>`;
         inner += `<line x1="260" y1="50" x2="290" y2="50" stroke="black" stroke-width="2"/>`;
+    } else if (type === 'm4b') {
+        inner += `<line x1="30" y1="50" x2="70" y2="50" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="250" y1="50" x2="290" y2="50" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="70" y1="20" x2="70" y2="80" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="250" y1="20" x2="250" y2="80" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="70" y1="20" x2="90" y2="20" stroke="black" stroke-width="2"/>`;
+        inner += box(90,10,r1); inner += `<line x1="132" y1="20" x2="158" y2="20" stroke="black" stroke-width="2"/>`; inner += box(158,10,r2); inner += `<line x1="200" y1="20" x2="250" y2="20" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="70" y1="80" x2="90" y2="80" stroke="black" stroke-width="2"/>`;
+        inner += box(90,70,r3); inner += `<line x1="132" y1="80" x2="158" y2="80" stroke="black" stroke-width="2"/>`; inner += box(158,70,r4); inner += `<line x1="200" y1="80" x2="250" y2="80" stroke="black" stroke-width="2"/>`;
+    } else if (type === 'm5a') {
+        inner += `<line x1="30" y1="50" x2="55" y2="50" stroke="black" stroke-width="2"/>`; inner += box(55,40,r1);
+        inner += `<line x1="97" y1="50" x2="115" y2="50" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="115" y1="25" x2="115" y2="75" stroke="black" stroke-width="2"/>`; inner += `<line x1="185" y1="25" x2="185" y2="75" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="115" y1="25" x2="129" y2="25" stroke="black" stroke-width="2"/>`; inner += box(129,15,r2); inner += `<line x1="171" y1="25" x2="185" y2="25" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="115" y1="75" x2="129" y2="75" stroke="black" stroke-width="2"/>`; inner += box(129,65,r3); inner += `<line x1="171" y1="75" x2="185" y2="75" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="185" y1="50" x2="198" y2="50" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="198" y1="25" x2="198" y2="75" stroke="black" stroke-width="2"/>`; inner += `<line x1="268" y1="25" x2="268" y2="75" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="198" y1="25" x2="212" y2="25" stroke="black" stroke-width="2"/>`; inner += box(212,15,r4); inner += `<line x1="254" y1="25" x2="268" y2="25" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="198" y1="75" x2="212" y2="75" stroke="black" stroke-width="2"/>`; inner += box(212,65,r5); inner += `<line x1="254" y1="75" x2="268" y2="75" stroke="black" stroke-width="2"/>`;
+        inner += `<line x1="268" y1="50" x2="290" y2="50" stroke="black" stroke-width="2"/>`;
     }
 
     return `<svg width="100%" height="auto" viewBox="0 0 320 185" xmlns="http://www.w3.org/2000/svg" style="max-width:380px;">${inner}</svg>`;
