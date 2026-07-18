@@ -215,7 +215,7 @@
                     <button type="button" id="period-all" onclick="setRankingPeriod('all')">歴代</button>
                 </div>
                 <div id="ranking-grid" class="ranking-grid"></div>
-                <button type="button" class="btn-reset-top" style="margin-top:10px;" onclick="clearRankings()">ランキングを消去</button>
+                <button type="button" class="btn-reset-top" style="margin-top:10px;" onclick="renderRankings()">ランキングを更新 🔄</button>
             </div>
 
         </div>
@@ -273,7 +273,7 @@
             <p style="margin:0 0 8px;font-size:14px;">今回の記録をランキングに載せる場合だけ、名前を入力してください。</p>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
                 <input id="result-player-name" class="name-input" type="text" maxlength="12" placeholder="例：2年1組 田中" autocomplete="off" style="flex:1;min-width:180px;">
-                <button class="btn" type="button" onclick="registerCurrentRanking()" style="margin:0;font-size:15px;padding:10px 14px;">登録する</button>
+                <button id="rank-submit-btn" class="btn" type="button" onclick="registerCurrentRanking()" style="margin:0;font-size:15px;padding:10px 14px;">登録する</button>
                 <button class="btn-reset-top" type="button" onclick="skipRankingRegistration()">登録しない</button>
             </div>
             <div id="rank-entry-msg" style="margin-top:7px;font-weight:bold;color:var(--danger);"></div>
@@ -927,7 +927,9 @@ function endQuiz(isSuccess, message = "", options = {}) {
 }
 
 
-const RANKING_KEY = 'electricCurrentMasterRankingsV4';
+const SUPABASE_URL = 'https://vngcvtpjvarompzhnkye.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_P1EXRA6zhNjwgXUNPYngdA_0fmNHYSr';
+const SUPABASE_TABLE = 'rankings';
 function renderWeaknessAnalysis() {
     const box = document.getElementById('weakness-analysis');
     if (!['easy','normal','hard'].includes(selectedDiff)) { box.classList.add('hidden'); return; }
@@ -954,16 +956,52 @@ function renderWeaknessAnalysis() {
 
 const DIFF_LABELS = {hard:'上級', oni:'鬼', superoni:'無双'};
 
-function loadRankings() {
+async function loadRankings() {
     try {
-        const parsed = JSON.parse(localStorage.getItem(RANKING_KEY));
-        return Array.isArray(parsed) ? parsed : [];
-    } catch (e) { return []; }
+        const url = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?select=*&order=created_at.desc&limit=1000`;
+        const res = await fetch(url, {
+            headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
+        });
+        if (!res.ok) throw new Error('取得に失敗しました: ' + res.status);
+        const rows = await res.json();
+        return rows.map(r => ({
+            id: r.id,
+            name: r.name,
+            category: r.category,
+            score: r.score,
+            time: r.time,
+            savedAt: new Date(r.created_at).getTime()
+        }));
+    } catch (e) {
+        console.warn('ランキングを取得できませんでした。', e);
+        return [];
+    }
 }
 
-function saveRankings(records) {
-    try { localStorage.setItem(RANKING_KEY, JSON.stringify(records)); }
-    catch (e) { console.warn('ランキングを保存できませんでした。', e); }
+async function saveRankingRecord(record) {
+    try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}`, {
+            method: 'POST',
+            headers: {
+                apikey: SUPABASE_KEY,
+                Authorization: `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': 'application/json',
+                Prefer: 'return=representation'
+            },
+            body: JSON.stringify({
+                name: record.name,
+                category: record.category,
+                score: record.score,
+                time: record.time
+            })
+        });
+        if (!res.ok) throw new Error('送信に失敗しました: ' + res.status);
+        const rows = await res.json();
+        return (rows && rows[0]) ? rows[0] : null;
+    } catch (e) {
+        console.warn('ランキングを送信できませんでした。', e);
+        return null;
+    }
 }
 
 function formatTime(sec) {
@@ -1038,13 +1076,15 @@ function formatRankRecord(r, scoreType) {
         : `${escapeHtml(r.name)}：${r.score}問（${formatTime(r.time)}）`;
 }
 
-function renderRankings() {
+async function renderRankings() {
     const grid = document.getElementById('ranking-grid');
     if (!grid) return;
-    const all = filterByPeriod(loadRankings(), rankingPeriod);
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:10px;">読み込み中…</div>';
+    const raw = await loadRankings();
+    const all = filterByPeriod(raw, rankingPeriod);
     const categories = getCategoryInfo();
     grid.innerHTML = categories.map(cat => {
-        const rows = sortCategory(all.filter(r => rankingCategory(r) === cat.key), cat.scoreType);
+        const rows = sortCategory(all.filter(r => r.category === cat.key), cat.scoreType);
         const top3 = rows.slice(0,3);
         const list = top3.length ? top3.map(r => `<li>${formatRankRecord(r, cat.scoreType)}</li>`).join('') : '<li>記録なし</li>';
         return `<div class="ranking-card"><h4>${cat.title}</h4><ol>${list}</ol></div>`;
@@ -1082,7 +1122,7 @@ function prepareRankingRegistration(isSuccess) {
     entry.classList.remove('hidden');
 }
 
-function registerCurrentRanking() {
+async function registerCurrentRanking() {
     if(!pendingRankingRecord) return;
     const input=document.getElementById('result-player-name');
     const name=input.value.trim();
@@ -1091,13 +1131,33 @@ function registerCurrentRanking() {
         input.focus(); return;
     }
     pendingRankingRecord.name=name;
+    pendingRankingRecord.category=rankingCategory(pendingRankingRecord);
     const record=pendingRankingRecord;
-    const records=loadRankings(); records.push(record); saveRankings(records); renderRankings();
-    const catKey=rankingCategory(record);
+
+    const msgBox=document.getElementById('rank-entry-msg');
+    const submitBtn=document.getElementById('rank-submit-btn');
+    msgBox.style.color='#4a5568';
+    msgBox.innerText='送信中…';
+    if (submitBtn) submitBtn.disabled = true;
+
+    const inserted = await saveRankingRecord(record);
+
+    if (submitBtn) submitBtn.disabled = false;
+    if (!inserted) {
+        msgBox.style.color='var(--danger)';
+        msgBox.innerText='送信に失敗しました。通信環境を確認してもう一度お試しください。';
+        return;
+    }
+    record.id = inserted.id;
+    record.savedAt = new Date(inserted.created_at).getTime();
+
+    renderRankings();
+    const catKey=record.category;
     const scoreType=(record.diff==='hard'||record.diff==='oni')?'time':'score';
     const periodLabels={today:'今日',week:'今週',all:'歴代'};
+    const allRecords = await loadRankings();
     const sections=['today','week','all'].map(period=>{
-        const rows=sortCategory(filterByPeriod(records,period).filter(r=>rankingCategory(r)===catKey),scoreType);
+        const rows=sortCategory(filterByPeriod(allRecords,period).filter(r=>r.category===catKey),scoreType);
         const rank=rows.findIndex(r=>r.id===record.id)+1;
         const top=rows.slice(0,3).map((r,i)=>`<li>${i+1}位　${formatRankRecord(r,scoreType)}</li>`).join('')||'<li>記録なし</li>';
         const mine=rank>0?`<div class="my-rank">あなた：${rank}位　${formatRankRecord(record,scoreType)}</div>`:'';
@@ -1112,12 +1172,6 @@ function registerCurrentRanking() {
 function skipRankingRegistration(){
     pendingRankingRecord=null;
     document.getElementById('rank-entry').classList.add('hidden');
-}
-
-function clearRankings() {
-    if (!confirm('この端末に保存されているランキングをすべて消去しますか？')) return;
-    localStorage.removeItem(RANKING_KEY);
-    renderRankings();
 }
 
 window.addEventListener('DOMContentLoaded', () => {
