@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>理科小テスト：電流マスター 完成度向上版</title>
+    <title>理科小テスト：電流マスター オンラインランキング対応版</title>
     <style>
         :root {
             --primary: #2c3e50;
@@ -89,6 +89,9 @@
         .ranking-card h4 { margin:0 0 6px; color:var(--primary); }
         .ranking-card ol { margin:0; padding-left:24px; font-size:13px; line-height:1.7; }
         .name-input { width:100%; box-sizing:border-box; font-size:17px; padding:9px 10px; border:2px solid #cbd5e0; border-radius:6px; }
+        .privacy-notice { background:#fff8db; border-left:5px solid var(--warning); padding:10px 12px; border-radius:6px; font-size:13px; line-height:1.65; margin:8px 0 10px; }
+        .rank-empty { color:#94a3b8; font-style:normal; }
+        .ranking-error { grid-column:1/-1; text-align:center; color:var(--danger); padding:12px; background:#fff5f5; border-radius:7px; }
         @media (max-width:560px) { .ranking-grid { grid-template-columns:1fr; } }
         .sub-time-box { background: #ffffff; border: 1px dashed #cbd5e0; padding: 10px; border-radius: 6px; margin-top: 8px; display: flex; gap: 10px; justify-content: center; }
         .sub-time-box label { padding: 6px 12px; font-size: 13px; }
@@ -214,14 +217,7 @@
                     <button type="button" id="period-week" onclick="setRankingPeriod('week')">今週</button>
                     <button type="button" id="period-all" onclick="setRankingPeriod('all')">歴代</button>
                 </div>
-                <div class="ranking-period-tabs">
-                    <button type="button" id="class-all" class="active" onclick="setRankingClass('all')">全クラス</button>
-                    <button type="button" id="class-中2A" onclick="setRankingClass('中2A')">中2A</button>
-                    <button type="button" id="class-中2B" onclick="setRankingClass('中2B')">中2B</button>
-                    <button type="button" id="class-中3A" onclick="setRankingClass('中3A')">中3A</button>
-                    <button type="button" id="class-中3B" onclick="setRankingClass('中3B')">中3B</button>
-                    <button type="button" id="class-その他" onclick="setRankingClass('その他')">その他</button>
-                </div>
+                <div class="ranking-period-tabs" id="ranking-class-tabs"></div>
                 <div id="ranking-grid" class="ranking-grid"></div>
                 <button type="button" class="btn-reset-top" style="margin-top:10px;" onclick="renderRankings()">ランキングを更新 🔄</button>
             </div>
@@ -278,17 +274,16 @@
         <div class="time-display" id="res-time">タイム: --:--</div>
         <div id="rank-entry" class="ranking-panel hidden">
             <h3 style="margin:0 0 6px;color:var(--primary);">🏆 ランキングに登録</h3>
-            <p style="margin:0 0 8px;font-size:14px;">今回の記録をランキングに載せる場合だけ、組と名前を入力してください。</p>
+            <p style="margin:0 0 6px;font-size:14px;">ランキング登録は任意です。登録しなくても結果や解説は確認できます。</p>
+            <div class="privacy-notice">
+                <strong>ニックネーム入力時の注意</strong><br>
+                ・本名や、個人を特定できる名前は入力しないでください。<br>
+                ・不適切な言葉、他人を傷つける言葉、他人になりすます名前は使用できません。<br>
+                ・入力したニックネーム、学年区分、記録はランキング上に表示されます。
+            </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <select id="result-player-class" class="name-input" style="flex:0 0 130px;">
-                    <option value="">クラスを選択</option>
-                    <option value="中2A">中2A</option>
-                    <option value="中2B">中2B</option>
-                    <option value="中3A">中3A</option>
-                    <option value="中3B">中3B</option>
-                    <option value="その他">その他（高校生など）</option>
-                </select>
-                <input id="result-player-name" class="name-input" type="text" maxlength="12" placeholder="例：田中" autocomplete="off" style="flex:1;min-width:140px;">
+                <select id="result-player-class" class="name-input" style="flex:0 0 145px;"></select>
+                <input id="result-player-name" class="name-input" type="text" maxlength="12" placeholder="例：オームくん" autocomplete="off" style="flex:1;min-width:140px;">
                 <button id="rank-submit-btn" class="btn" type="button" onclick="registerCurrentRanking()" style="margin:0;font-size:15px;padding:10px 14px;">登録する</button>
                 <button class="btn-reset-top" type="button" onclick="skipRankingRegistration()">登録しない</button>
             </div>
@@ -944,9 +939,36 @@ function endQuiz(isSuccess, message = "", options = {}) {
 }
 
 
+const APP_ID = 'electric_current_master';
 const SUPABASE_URL = 'https://vngcvtpjvarompzhnkye.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_P1EXRA6zhNjwgXUNPYngdA_0fmNHYSr';
 const SUPABASE_TABLE = 'rankings';
+
+const CLASS_OPTIONS = [
+    {value:'all', label:'総合', registration:false},
+    {value:'junior_1', label:'中１', registration:true},
+    {value:'junior_2', label:'中２', registration:true},
+    {value:'junior_3', label:'中３', registration:true},
+    {value:'high_school_plus', label:'高校以上', registration:true}
+];
+const CLASS_LABELS = Object.fromEntries(CLASS_OPTIONS.map(item => [item.value, item.label]));
+
+function renderClassControls() {
+    const tabs = document.getElementById('ranking-class-tabs');
+    if (tabs) {
+        tabs.innerHTML = CLASS_OPTIONS.map(item =>
+            `<button type="button" id="class-${item.value}" class="${item.value === rankingClass ? 'active' : ''}" onclick="setRankingClass('${item.value}')">${item.label}</button>`
+        ).join('');
+    }
+    const select = document.getElementById('result-player-class');
+    if (select) {
+        select.innerHTML = '<option value="">学年区分を選択</option>' + CLASS_OPTIONS
+            .filter(item => item.registration)
+            .map(item => `<option value="${item.value}">${item.label}</option>`)
+            .join('');
+    }
+}
+
 function renderWeaknessAnalysis() {
     const box = document.getElementById('weakness-analysis');
     if (!['easy','normal','hard'].includes(selectedDiff)) { box.classList.add('hidden'); return; }
@@ -975,131 +997,126 @@ const DIFF_LABELS = {hard:'上級', oni:'鬼', superoni:'無双'};
 
 async function loadRankings() {
     try {
-        const url = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?select=*&order=created_at.desc&limit=1000`;
-        const res = await fetch(url, {
+        const query = new URLSearchParams({
+            select:'id,app_id,nickname,category,score,time_seconds,class_code,created_at',
+            app_id:`eq.${APP_ID}`,
+            order:'created_at.desc',
+            limit:'1000'
+        });
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?${query}`, {
             headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
         });
         if (!res.ok) throw new Error('取得に失敗しました: ' + res.status);
         const rows = await res.json();
+        console.info(`[ranking] fetched=${rows.length}, app_id=${APP_ID}`);
         return rows.map(r => ({
-            id: r.id,
-            name: r.name,
-            category: r.category,
-            score: r.score,
-            time: r.time,
-            class_name: r.class_name,
-            savedAt: new Date(r.created_at).getTime()
+            id:r.id,
+            name:r.nickname,
+            category:r.category,
+            score:Number(r.score),
+            time:Number(r.time_seconds),
+            class_name:r.class_code,
+            savedAt:new Date(r.created_at).getTime()
         }));
     } catch (e) {
         console.warn('ランキングを取得できませんでした。', e);
-        return [];
-    }
-}
-
-async function saveRankingRecord(record) {
-    try {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}`, {
-            method: 'POST',
-            headers: {
-                apikey: SUPABASE_KEY,
-                Authorization: `Bearer ${SUPABASE_KEY}`,
-                'Content-Type': 'application/json',
-                Prefer: 'return=representation'
-            },
-            body: JSON.stringify({
-                name: record.name,
-                category: record.category,
-                score: record.score,
-                time: record.time,
-                class_name: record.class_name,
-                device_id: record.device_id
-            })
-        });
-        if (!res.ok) {
-            const body = await res.text().catch(() => '');
-            if (body.includes('連続投稿')) throw new Error('SPAM_BLOCKED');
-            throw new Error('送信に失敗しました: ' + res.status);
-        }
-        const rows = await res.json();
-        return (rows && rows[0]) ? rows[0] : null;
-    } catch (e) {
-        console.warn('ランキングを送信できませんでした。', e);
-        if (e.message === 'SPAM_BLOCKED') throw e;
         return null;
     }
 }
 
+async function saveRankingRecord(record) {
+    const challengeId = record.challenge_id || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}`, {
+        method:'POST',
+        headers:{
+            apikey:SUPABASE_KEY,
+            Authorization:`Bearer ${SUPABASE_KEY}`,
+            'Content-Type':'application/json',
+            Prefer:'return=representation'
+        },
+        body:JSON.stringify({
+            app_id:APP_ID,
+            nickname:record.name,
+            category:record.category,
+            score:record.score,
+            time_seconds:record.time,
+            class_code:record.class_name,
+            device_id:record.device_id,
+            challenge_id:challengeId
+        })
+    });
+    if (!res.ok) {
+        const body = await res.text().catch(() => '');
+        if (res.status === 409 || body.includes('challenge_id')) throw new Error('DUPLICATE');
+        if (body.includes('連続投稿') || res.status === 429) throw new Error('SPAM_BLOCKED');
+        throw new Error(`送信に失敗しました: ${res.status}`);
+    }
+    const rows=await res.json();
+    return rows?.[0] || null;
+}
+
 function getDeviceId() {
-    let id = localStorage.getItem('ecmDeviceId');
+    let id = localStorage.getItem('scienceAppsDeviceId');
     if (!id) {
-        id = (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
-        localStorage.setItem('ecmDeviceId', id);
+        id = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        localStorage.setItem('scienceAppsDeviceId', id);
     }
     return id;
 }
 
 const NG_WORDS = ['ばか','あほ','しね','うざい','きもい','ちんこ','うんこ'];
-function containsNgWord(name) {
+function validateNickname(value) {
+    const name = value.trim().replace(/\s+/g, ' ');
+    if (!name) return 'ニックネームを入力してください。';
+    if (name.length < 2 || name.length > 12) return 'ニックネームは2～12文字で入力してください。';
     const lower = name.toLowerCase();
-    return NG_WORDS.some(w => lower.includes(w));
+    if (NG_WORDS.some(word => lower.includes(word))) return '使用できない言葉が含まれています。ニックネームを見直してください。';
+    if (/https?:\/\/|www\.|@|\.com|\.jp/i.test(name)) return 'URLやメールアドレスは入力できません。';
+    if (/\d{6,}/.test(name)) return '学籍番号など、長い数字は入力できません。';
+    if (/(.)\1{5,}/u.test(name)) return '同じ文字を繰り返しすぎています。';
+    if (/[<>"'`]/.test(name)) return '使用できない記号が含まれています。';
+    return '';
 }
 
 function formatTime(sec) {
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
+    const safe = Math.max(0, Number(sec) || 0);
+    const m = Math.floor(safe / 60);
+    const s = Math.floor(safe % 60);
     return `${m}分${String(s).padStart(2,'0')}秒`;
 }
-
 function escapeHtml(str) {
     return String(str).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 }
-
-function startOfToday(now = new Date()) {
-    return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-}
-
+function startOfToday(now = new Date()) { return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(); }
 function startOfWeek(now = new Date()) {
     const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const day = d.getDay(); // 日曜0
-    const diffToMonday = day === 0 ? 6 : day - 1;
-    d.setDate(d.getDate() - diffToMonday);
+    const day = d.getDay();
+    d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
     return d.getTime();
 }
-
 function filterByPeriod(records, period) {
     if (period === 'all') return records;
     const boundary = period === 'today' ? startOfToday() : startOfWeek();
     return records.filter(r => r.savedAt >= boundary);
 }
-
 function filterByClass(records, cls) {
     if (cls === 'all') return records;
     return records.filter(r => r.class_name === cls);
 }
-
 function setRankingPeriod(period) {
     rankingPeriod = period;
-    ['today','week','all'].forEach(p => {
-        const el = document.getElementById(`period-${p}`);
-        if (el) el.classList.toggle('active', p === period);
-    });
+    ['today','week','all'].forEach(p => document.getElementById(`period-${p}`)?.classList.toggle('active', p === period));
     renderRankings();
 }
-
 function setRankingClass(cls) {
     rankingClass = cls;
-    ['all','中2A','中2B','中3A','中3B','その他'].forEach(c => {
-        const el = document.getElementById(`class-${c}`);
-        if (el) el.classList.toggle('active', c === cls);
-    });
+    CLASS_OPTIONS.forEach(item => document.getElementById(`class-${item.value}`)?.classList.toggle('active', item.value === cls));
     renderRankings();
 }
-
 function selectedCountdownSeconds() {
-    const selected = document.querySelector('input[name="countdown-val"]:checked');
-    return selected ? parseInt(selected.value, 10) : 300;
+    const selected=document.querySelector('input[name="countdown-val"]:checked');
+    return selected ? parseInt(selected.value,10) : 300;
 }
-
 function rankingCategory(record) {
     if (record.diff === 'hard' && record.timeType === 'ta') return 'hard-ta';
     if (record.diff === 'oni' && record.timeType === 'ta') return 'oni-ta';
@@ -1107,147 +1124,129 @@ function rankingCategory(record) {
     if (record.diff === 'superoni' && record.timeType === 'cd') return `superoni-cd-${record.duration}`;
     return '';
 }
-
 function getCategoryInfo() {
-    const cd = selectedCountdownSeconds();
+    const cd=selectedCountdownSeconds();
     return [
-        {key:'hard-ta', title:'上級・タイムアタック', scoreType:'time'},
-        {key:'oni-ta', title:'鬼・タイムアタック', scoreType:'time'},
-        {key:'superoni-ta', title:'無双・タイムアタック', scoreType:'score'},
-        {key:`superoni-cd-${cd}`, title:`無双・カウントダウン（${Math.floor(cd/60)}分）`, scoreType:'score'}
+        {key:'hard-ta',title:'上級・タイムアタック',scoreType:'time'},
+        {key:'oni-ta',title:'鬼・タイムアタック',scoreType:'time'},
+        {key:'superoni-ta',title:'無双・タイムアタック',scoreType:'score'},
+        {key:`superoni-cd-${cd}`,title:`無双・カウントダウン（${Math.floor(cd/60)}分）`,scoreType:'score'}
     ];
 }
-
 function sortCategory(records, scoreType) {
     return records.slice().sort((a,b) => scoreType === 'time'
-        ? (a.time - b.time) || (a.savedAt - b.savedAt)
-        : (b.score - a.score) || (a.time - b.time) || (a.savedAt - b.savedAt));
+        ? (a.time-b.time)||(a.savedAt-b.savedAt)
+        : (b.score-a.score)||(a.time-b.time)||(a.savedAt-b.savedAt));
 }
-
 function formatRankRecord(r, scoreType) {
-    const label = (rankingClass === 'all' && r.class_name) ? `${escapeHtml(r.name)}(${escapeHtml(r.class_name)})` : escapeHtml(r.name);
-    return scoreType === 'time'
-        ? `${label}：${formatTime(r.time)}`
-        : `${label}：${r.score}問（${formatTime(r.time)}）`;
+    const classLabel=CLASS_LABELS[r.class_name] || '区分不明';
+    const label=rankingClass === 'all' ? `${escapeHtml(r.name)}（${classLabel}）` : escapeHtml(r.name);
+    return scoreType === 'time' ? `${label}：${formatTime(r.time)}` : `${label}：${r.score}問（${formatTime(r.time)}）`;
 }
-
+function renderTopThree(rows, scoreType) {
+    const medals=['🥇','🥈','🥉'];
+    return [0,1,2].map(i => rows[i]
+        ? `<li>${medals[i]} ${i+1}位　${formatRankRecord(rows[i],scoreType)}</li>`
+        : `<li class="rank-empty">${medals[i]} ${i+1}位　まだ記録がありません</li>`
+    ).join('');
+}
 async function renderRankings() {
-    const grid = document.getElementById('ranking-grid');
-    if (!grid) return;
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:10px;">読み込み中…</div>';
-    const raw = await loadRankings();
-    const all = filterByClass(filterByPeriod(raw, rankingPeriod), rankingClass);
-    const categories = getCategoryInfo();
-    grid.innerHTML = categories.map(cat => {
-        const rows = sortCategory(all.filter(r => r.category === cat.key), cat.scoreType);
-        const top3 = rows.slice(0,3);
-        const list = top3.length ? top3.map(r => `<li>${formatRankRecord(r, cat.scoreType)}</li>`).join('') : '<li>記録なし</li>';
-        return `<div class="ranking-card"><h4>${cat.title}</h4><ol>${list}</ol></div>`;
+    const grid=document.getElementById('ranking-grid');
+    if(!grid) return;
+    grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:10px;">読み込み中…</div>';
+    const raw=await loadRankings();
+    if(raw === null) {
+        grid.innerHTML='<div class="ranking-error">ランキングを取得できませんでした。通信環境を確認して、更新してください。</div>';
+        return;
+    }
+    const all=filterByClass(filterByPeriod(raw,rankingPeriod),rankingClass);
+    grid.innerHTML=getCategoryInfo().map(cat => {
+        const rows=sortCategory(all.filter(r=>r.category===cat.key),cat.scoreType).slice(0,3);
+        return `<div class="ranking-card"><h4>${cat.title}</h4><ol>${renderTopThree(rows,cat.scoreType)}</ol></div>`;
     }).join('');
 }
 
 function buildEligibleRankingRecord(isSuccess) {
     if (selectedDiff === 'review') return null;
-    const eligibleTA = timeType === 'ta' && ['hard','oni','superoni'].includes(selectedDiff);
-    const eligibleLordCD = timeType === 'cd' && selectedDiff === 'superoni';
-    if (!eligibleTA && !eligibleLordCD) return null;
-    if (selectedDiff !== 'superoni' && !isSuccess) return null;
-    // 無双は1ミス終了。タイム切れまたはミスまでの連続正解数を記録。
+    const eligibleTA=timeType==='ta' && ['hard','oni','superoni'].includes(selectedDiff);
+    const eligibleCD=timeType==='cd' && selectedDiff==='superoni';
+    if(!eligibleTA && !eligibleCD) return null;
+    if(selectedDiff!=='superoni' && !isSuccess) return null;
     return {
         id:`${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        name:'',
-        class_name:'',
+        challenge_id:crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        name:'',class_name:'',
         time:timeType==='ta'?timerSeconds:(countdownStartSeconds-timerSeconds),
-        score:selectedDiff==='superoni'?currentCorrectCount:currentCorrectCount,
-        totalCorrect:currentCorrectCount,
+        score:currentCorrectCount,totalCorrect:currentCorrectCount,
         diff:selectedDiff,timeType,
         duration:timeType==='cd'?countdownStartSeconds:null,
         mode:selectedMode,savedAt:Date.now()
     };
 }
-
 function prepareRankingRegistration(isSuccess) {
     pendingRankingRecord=buildEligibleRankingRecord(isSuccess);
     const entry=document.getElementById('rank-entry');
     const result=document.getElementById('rank-result');
-    entry.classList.add('hidden'); result.classList.add('hidden');
-    result.innerHTML='';
+    entry.classList.add('hidden'); result.classList.add('hidden'); result.innerHTML='';
     if(!pendingRankingRecord) return;
     document.getElementById('result-player-name').value='';
     const classSelect=document.getElementById('result-player-class');
-    if (classSelect) classSelect.value = localStorage.getItem('ecmLastClass') || '';
+    if(classSelect) classSelect.value=localStorage.getItem('scienceAppsLastClass') || '';
     document.getElementById('rank-entry-msg').innerText='';
     entry.classList.remove('hidden');
 }
-
 async function registerCurrentRanking() {
     if(!pendingRankingRecord) return;
     const input=document.getElementById('result-player-name');
     const classSelect=document.getElementById('result-player-class');
-    const name=input.value.trim();
-    const cls=classSelect ? classSelect.value : '';
+    const name=input.value.trim().replace(/\s+/g,' ');
+    const cls=classSelect?.value || '';
     const msgBox=document.getElementById('rank-entry-msg');
-
-    if(!cls){
-        msgBox.style.color='var(--danger)';
-        msgBox.innerText='組を選んでください。';
-        return;
+    if(!CLASS_OPTIONS.some(item=>item.registration && item.value===cls)) {
+        msgBox.style.color='var(--danger)'; msgBox.innerText='学年区分を選んでください。'; return;
     }
-    if(!name){
-        msgBox.style.color='var(--danger)';
-        msgBox.innerText='名前を入力してください。';
-        input.focus(); return;
-    }
-    if(containsNgWord(name)){
-        msgBox.style.color='var(--danger)';
-        msgBox.innerText='使用できない言葉が含まれています。名前を見直してください。';
-        input.focus(); return;
+    const validationError=validateNickname(name);
+    if(validationError) {
+        msgBox.style.color='var(--danger)'; msgBox.innerText=validationError; input.focus(); return;
     }
     pendingRankingRecord.name=name;
     pendingRankingRecord.class_name=cls;
     pendingRankingRecord.device_id=getDeviceId();
     pendingRankingRecord.category=rankingCategory(pendingRankingRecord);
     const record=pendingRankingRecord;
-
     const submitBtn=document.getElementById('rank-submit-btn');
-    msgBox.style.color='#4a5568';
-    msgBox.innerText='送信中…';
-    if (submitBtn) submitBtn.disabled = true;
-
+    msgBox.style.color='#4a5568'; msgBox.innerText='登録しています…';
+    if(submitBtn) { submitBtn.disabled=true; submitBtn.style.opacity='0.6'; }
     let inserted;
-    try {
-        inserted = await saveRankingRecord(record);
-    } catch (e) {
-        if (submitBtn) submitBtn.disabled = false;
+    try { inserted=await saveRankingRecord(record); }
+    catch(e) {
+        if(submitBtn) { submitBtn.disabled=false; submitBtn.style.opacity='1'; }
         msgBox.style.color='var(--danger)';
-        msgBox.innerText='短い間隔での連続登録は制限されています。少し待ってからもう一度お試しください。';
+        msgBox.innerText=e.message==='SPAM_BLOCKED'
+            ? '短い間隔での連続登録は制限されています。少し待ってからお試しください。'
+            : e.message==='DUPLICATE' ? 'この記録はすでに登録されています。' : '送信に失敗しました。通信環境を確認してください。';
         return;
     }
-
-    if (submitBtn) submitBtn.disabled = false;
-    if (!inserted) {
-        msgBox.style.color='var(--danger)';
-        msgBox.innerText='送信に失敗しました。通信環境を確認してもう一度お試しください。';
-        return;
+    if(submitBtn) { submitBtn.disabled=false; submitBtn.style.opacity='1'; }
+    record.id=inserted.id;
+    record.savedAt=new Date(inserted.created_at).getTime();
+    localStorage.setItem('scienceAppsLastClass',cls);
+    await renderRankings();
+    const allRecords=await loadRankings();
+    if(allRecords === null) {
+        msgBox.style.color='var(--success)'; msgBox.innerText='登録は完了しましたが、ランキングの再取得に失敗しました。'; return;
     }
-    record.id = inserted.id;
-    record.savedAt = new Date(inserted.created_at).getTime();
-    localStorage.setItem('ecmLastClass', cls);
-
-    renderRankings();
-    const catKey=record.category;
     const scoreType=(record.diff==='hard'||record.diff==='oni')?'time':'score';
     const periodLabels={today:'今日',week:'今週',all:'歴代'};
-    const allRecords = await loadRankings();
-    const sections=['today','week','all'].map(period=>{
-        const rows=sortCategory(filterByPeriod(allRecords,period).filter(r=>r.category===catKey),scoreType);
+    const sections=['today','week','all'].map(period => {
+        const rows=sortCategory(filterByPeriod(allRecords,period).filter(r=>r.category===record.category),scoreType);
         const rank=rows.findIndex(r=>r.id===record.id)+1;
-        const top=rows.slice(0,3).map((r,i)=>`<li>${i+1}位　${formatRankRecord(r,scoreType)}</li>`).join('')||'<li>記録なし</li>';
         const mine=rank>0?`<div class="my-rank">あなた：${rank}位　${formatRankRecord(record,scoreType)}</div>`:'';
-        return `<div style="margin-top:10px;"><b>${periodLabels[period]}のランキング</b><ol style="line-height:1.8;">${top}</ol>${mine}</div>`;
+        return `<div style="margin-top:10px;"><b>${periodLabels[period]}の総合ランキング</b><ol style="line-height:1.8;">${renderTopThree(rows.slice(0,3),scoreType)}</ol>${mine}</div>`;
     }).join('');
     document.getElementById('rank-entry').classList.add('hidden');
-    const box=document.getElementById('rank-result'); box.classList.remove('hidden');
+    const box=document.getElementById('rank-result');
+    box.classList.remove('hidden');
     box.innerHTML=`<h3 style="margin:0;color:var(--primary);">🏆 今回のランキング</h3>${sections}`;
     pendingRankingRecord=null;
 }
@@ -1258,7 +1257,9 @@ function skipRankingRegistration(){
 }
 
 window.addEventListener('DOMContentLoaded', () => {
+    renderClassControls();
     setRankingPeriod('today');
+    setRankingClass('all');
 });
 
 // 見直し専用の再挑戦セッション（パスなし・タイムアタック・鬼判定なしの練習モード）
